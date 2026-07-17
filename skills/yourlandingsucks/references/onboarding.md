@@ -6,11 +6,13 @@ public site.
 ## 1. Establish the project-local tool
 
 Detect the repository's package manager and conventions. If YLS is not already
-installed, install the source specified by the user or bootstrap prompt as a
-development dependency. The default public prerelease is:
+installed, resolve it only from the official public npm registry named by the
+bootstrap prompt and install it as an exact project-local development
+dependency. Never substitute GitHub, a branch, a global install, or a different
+version. The current public prerelease is:
 
 ```text
-yourlandingsucks@0.1.0-alpha.0
+yourlandingsucks@0.1.0-alpha.1
 ```
 
 Confirm the local binary works:

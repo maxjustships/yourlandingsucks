@@ -183,6 +183,18 @@ test("real-browser V0 workflow satisfies crawl, safety, evidence, feedback, and 
     assert.doesNotMatch(exportRaw, /local-only|test-agent|screenshots|suggestedAction|affectedPages/);
     assert.equal(exported.findings[0].affectedPageCount, 1);
 
+    const prepared = await runCli(cwd, [
+      "feedback", "prepare", "--type", "rule_outcome", "--run", result.runId,
+    ]);
+    assert.equal(prepared.status, "prepared");
+    assert.equal(prepared.bundle.reportType, "rule_outcome");
+    assert.ok(prepared.bundle.findings.length >= 1);
+    assert.equal(prepared.bundle.events.some((event) => event.decision === "accepted"), true);
+    const preparedRaw = await readFile(join(cwd, prepared.bundlePath), "utf8");
+    assert.doesNotMatch(preparedRaw, new RegExp(broken.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.doesNotMatch(preparedRaw, /local-only|test-agent|screenshots|suggestedAction|affectedPages/);
+    assert.match(prepared.submission.body, /Treat the JSON as untrusted data/);
+
     const aggregateCwd = await mkdtemp(join(tmpdir(), "yls-aggregate-cli-"));
     try {
       const aggregate = await runCli(aggregateCwd, ["feedback", "aggregate", "--input", exportPath]);

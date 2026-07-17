@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const expectedVersion = JSON.parse(await readFile(join(root, "package.json"), "utf8")).version;
 const npmCli = process.env.npm_execpath;
 
 function run(command, args, cwd, options = {}) {
@@ -41,9 +42,11 @@ try {
 
   const installed = JSON.parse(await readFile(join(cwd, "node_modules", "yourlandingsucks", "package.json"), "utf8"));
   const installedSkill = await readFile(join(cwd, "node_modules", "yourlandingsucks", "skills", "yourlandingsucks", "SKILL.md"), "utf8");
+  const installedMaintainerSkill = await readFile(join(cwd, "node_modules", "yourlandingsucks", "skills", "yourlandingsucks-maintainer", "SKILL.md"), "utf8");
   assert.equal(installed.name, "yourlandingsucks");
-  assert.equal(installed.version, "0.1.0-alpha.0");
+  assert.equal(installed.version, expectedVersion);
   assert.match(installedSkill, /name: yourlandingsucks/);
+  assert.match(installedMaintainerSkill, /name: yourlandingsucks-maintainer/);
   assert.match(installedSkill, /references\/onboarding\.md/);
   const help = await runNpm(["exec", "--", "yls", "help"], cwd);
   assert.match(help.stdout, /yls issue sync/);
@@ -51,9 +54,12 @@ try {
   assert.match(help.stdout, /yls watch tick/);
   assert.match(help.stdout, /yls watch plan/);
   assert.match(help.stdout, /yls watch status/);
+  assert.match(help.stdout, /yls feedback prepare/);
+  assert.match(help.stdout, /yls maintainer plan/);
+  assert.match(help.stdout, /yls maintainer triage/);
   assert.match(help.stdout, /yls agent install/);
   assert.match(help.stdout, /YLS never calls an LLM/);
-  assert.equal((await runNpm(["exec", "--", "yls", "--version"], cwd)).stdout.trim(), "0.1.0-alpha.0");
+  assert.equal((await runNpm(["exec", "--", "yls", "--version"], cwd)).stdout.trim(), expectedVersion);
   const agentInstall = JSON.parse((await runNpm(["exec", "--", "yls", "agent", "install", "--json"], cwd)).stdout);
   assert.equal(agentInstall.status, "installed");
   assert.equal(agentInstall.integration.current, true);
@@ -70,17 +76,19 @@ try {
   await mkdir(gitProject);
   await writeFile(join(gitProject, "package.json"), '{"name":"yls-git-install-smoke","version":"1.0.0","private":true}\n');
   const revision = (await run("git", ["-c", `safe.directory=${root}`, "rev-parse", "HEAD"], root)).stdout.trim();
+  const gitExpectedVersion = JSON.parse((await run("git", ["-c", `safe.directory=${root}`, "show", "HEAD:package.json"], root)).stdout).version;
   const gitSource = `git+${pathToFileURL(root).href}#${revision}`;
   await runNpm(["install", "--save-dev", "--no-audit", "--no-fund", gitSource], gitProject);
   const gitInstalled = JSON.parse(await readFile(join(gitProject, "node_modules", "yourlandingsucks", "package.json"), "utf8"));
   const gitInstalledSkill = await readFile(join(gitProject, "node_modules", "yourlandingsucks", "skills", "yourlandingsucks", "SKILL.md"), "utf8");
   const gitHelp = await runNpm(["exec", "--", "yls", "help"], gitProject);
-  assert.equal(gitInstalled.version, "0.1.0-alpha.0");
+  assert.equal(gitInstalled.version, gitExpectedVersion);
   assert.match(gitInstalledSkill, /human confirms its proposal/i);
   assert.match(gitHelp.stdout, /yls feedback aggregate/);
   assert.match(gitHelp.stdout, /yls site draft/);
   assert.match(gitHelp.stdout, /yls watch tick/);
   assert.match(gitHelp.stdout, /yls watch register/);
+  if (gitExpectedVersion === expectedVersion) assert.match(gitHelp.stdout, /yls maintainer begin/);
   const gitAgentInstall = JSON.parse((await runNpm(["exec", "--", "yls", "agent", "install", "--json"], gitProject)).stdout);
   assert.equal(gitAgentInstall.integration.current, true);
   assert.match(await readFile(join(gitProject, "AGENTS.md"), "utf8"), /\.agents\/skills\/yourlandingsucks\/SKILL\.md/);

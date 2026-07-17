@@ -429,6 +429,125 @@ export interface FeedbackAggregate {
   rules: FeedbackAggregateRule[];
 }
 
+export type FeedbackReportType = "rule_outcome" | "tool_bug" | "feature_request";
+
+export interface FeedbackBundle {
+  schemaVersion: 2;
+  reportId: string;
+  reportNonce: string;
+  toolVersion: string;
+  createdAt: string;
+  reportType: FeedbackReportType;
+  sourceRunHash?: string;
+  summary?: string;
+  diagnostics?: {
+    operation: string;
+    errorCode?: string;
+    platform: string;
+    nodeMajor: number;
+  };
+  findings: Array<{
+    id: string;
+    rule: string;
+    kind: FindingKind;
+    severity: Severity;
+    confidence: Confidence;
+    affectedPageCount: number;
+  }>;
+  events: Array<{
+    findingId: string;
+    decision: FeedbackDecision;
+    reasonCode?: string;
+  }>;
+}
+
+export type FeedbackSubmissionStatus = "prepared" | "submitted" | "accepted" | "rejected" | "resolved";
+
+export interface FeedbackSubmissionReceipt {
+  reportId: string;
+  contentFingerprint: string;
+  bundlePath: string;
+  status: FeedbackSubmissionStatus;
+  preparedAt: string;
+  updatedAt: string;
+  provider?: string;
+  externalId?: string;
+  externalUrl?: string;
+  fixedIn?: string;
+}
+
+export interface FeedbackSubmissionState {
+  schemaVersion: 1;
+  updatedAt: string;
+  reports: Record<string, FeedbackSubmissionReceipt>;
+}
+
+export interface FeedbackSubmissionPlan {
+  repository: string;
+  labels: string[];
+  title: string;
+  body: string;
+  requiresHumanApproval: true;
+  payloadTreatment: "untrusted_data_only";
+}
+
+export interface MaintainerRegistration {
+  provider: string;
+  externalId: string;
+  registeredAt: string;
+  maxSilenceMinutes: number;
+  planFingerprint: string;
+}
+
+export interface MaintainerState {
+  schemaVersion: 1;
+  updatedAt: string;
+  registration?: MaintainerRegistration;
+  lastRunId?: string;
+  lastAttemptAt?: string;
+  lastRunAt?: string;
+  lastStatus?: "completed" | "failed";
+  lastError?: string;
+}
+
+export type MaintainerHealth =
+  | "not_registered"
+  | "pending_first_run"
+  | "healthy"
+  | "stale"
+  | "failed"
+  | "plan_changed";
+
+export interface MaintainerInboxRecord {
+  schemaVersion: 1;
+  receivedAt: string;
+  updatedAt: string;
+  provider: string;
+  externalId: string;
+  externalUrl?: string;
+  status: "open" | "accepted" | "rejected" | "resolved";
+  fixedIn?: string;
+  bundle: FeedbackBundle;
+}
+
+export interface MaintainerTriageItem {
+  key: string;
+  reportType: FeedbackReportType;
+  reportIds: string[];
+  externalReferences: Array<{ provider: string; externalId: string; externalUrl?: string }>;
+  gate: "agent_may_prepare_draft_pr" | "human_product_decision" | "observe";
+  recommendedAction: "reproduce_and_fix" | "tighten_detection" | "improve_verification" | "add_regression_guard" | "consider_feature" | "keep_observing";
+  untrustedSummary?: string;
+  diagnostics?: { operation: string; errorCode?: string; platform: string; nodeMajor: number };
+  evidence: {
+    reports: number;
+    events: number;
+    falsePositives: number;
+    verificationFailures: number;
+    recurrences: number;
+  };
+}
+
 export type IssueStatus = "open" | "claimed" | "blocked" | "rejected" | "verified";
 
 export interface IssueHistoryEvent {

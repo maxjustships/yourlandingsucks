@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, normalize, relative, resolve } from "node:path";
+
+const currentPackageVersion = (JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }).version;
 
 export function stableHash(value: string, length = 12): string {
   return createHash("sha256").update(value).digest("hex").slice(0, length);
@@ -62,5 +65,5 @@ export function pathInside(base: string, candidate: string): boolean {
 }
 
 export function packageVersion(): string {
-  return "0.1.0-alpha.0";
+  return currentPackageVersion;
 }

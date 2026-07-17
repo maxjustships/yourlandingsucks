@@ -1,6 +1,6 @@
 {
   "name": "yourlandingsucks",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "description": "Local-first, agent-driven evidence and verification for public website surfaces.",
   "repository": {
     "type": "git",
@@ -33,9 +33,9 @@
     "build": "tsc -p tsconfig.json",
     "prepare": "npm run build",
     "clean": "node scripts/clean.mjs",
-    "test": "npm run build && node --test --test-concurrency=1 test/unit/core.test.mjs test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/multi-site-watch.test.mjs",
+    "test": "npm run build && node --test --test-concurrency=1 test/unit/core.test.mjs test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/feedback-maintainer.test.mjs test/integration/multi-site-watch.test.mjs",
     "test:unit": "npm run build && node --test --test-concurrency=1 test/unit/core.test.mjs",
-    "test:integration": "npm run build && node --test --test-concurrency=1 test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/multi-site-watch.test.mjs",
+    "test:integration": "npm run build && node --test --test-concurrency=1 test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/feedback-maintainer.test.mjs test/integration/multi-site-watch.test.mjs",
     "check": "npm run clean && npm run test",
     "smoke:install": "npm run build && node scripts/install-smoke.mjs",
     "smoke:public-install": "node scripts/public-install-smoke.mjs",

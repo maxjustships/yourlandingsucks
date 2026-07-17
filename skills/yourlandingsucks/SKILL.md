@@ -1,6 +1,6 @@
 ---
 name: yourlandingsucks
-description: Give a coding agent a prompt-native capability for installing, onboarding, auditing, criticizing, improving, fixing, comparing, verifying, and monitoring one or more public websites with the project-local YourLandingSucks CLI. Use for natural-language requests about landing pages, marketing sites, public app surfaces, site quality, conversion readiness, accessibility, performance, regressions, recurring watch rules, local YLS issues, preview verification, or sanitized feedback.
+description: Give a coding agent a prompt-native capability for installing, onboarding, auditing, criticizing, improving, fixing, comparing, verifying, and monitoring one or more public websites with the project-local YourLandingSucks CLI. Use for natural-language requests about landing pages, marketing sites, public app surfaces, site quality, conversion readiness, accessibility, performance, regressions, recurring watch rules, local YLS issues, preview verification, or privacy-reviewed upstream feedback with submission receipts.
 ---
 
 # YourLandingSucks
@@ -30,8 +30,9 @@ human explicitly asks for implementation details.
 - Never activate a site before the human confirms its proposal. Never invent a
   human answer or bypass a confirmed config hash.
 - Never describe a heuristic or behavior signal as proven conversion lift.
-- Never export, upload, commit, or push feedback or raw `.yls/` artifacts unless
-  the human explicitly requests the exact action and destination.
+- Never submit, upload, commit, or push feedback or raw `.yls/` artifacts unless
+  the human explicitly approves the exact sanitized payload and destination.
+  A prepared feedback bundle is not permission to send it.
 - Never call recurring monitoring active merely because a site or cron was
   confirmed. Require a real external automation registration and a healthy
   heartbeat.

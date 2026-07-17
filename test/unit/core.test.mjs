@@ -254,8 +254,10 @@ test("README install is one human copy-paste prompt with no blanks to fill", asy
   const install = readme.match(/## Install\r?\n([\s\S]*?)(?=\r?\n## )/)?.[1];
   assert.ok(install, "README must contain an Install section");
   for (const required of [
-    "yourlandingsucks@0.1.0-alpha.0",
-    "yls agent install --json",
+    "https://registry.npmjs.org/",
+    "yourlandingsucks@0.1.0-alpha.1",
+    "npm install --save-dev --save-exact --registry=https://registry.npmjs.org/ yourlandingsucks@0.1.0-alpha.1",
+    "npx --no-install yls agent install --json",
     ".agents/skills/yourlandingsucks/SKILL.md",
     "discover every public website it owns",
     "ask me only for decisions that cannot be safely inferred",
@@ -267,7 +269,7 @@ test("README install is one human copy-paste prompt with no blanks to fill", asy
   assert.doesNotMatch(install, /YLS_SOURCE|PUBLIC_SITES|AGENT_NAME|<[^>\n]+>|\breplace\b/i);
 });
 
-test("bundled Agent Skill owns onboarding, watch, and issue instructions", async () => {
+test("bundled Agent Skills own project and maintainer workflows", async () => {
   const skillRoot = new URL("../../skills/yourlandingsucks/", import.meta.url);
   const contents = [
     await readFile(new URL("SKILL.md", skillRoot), "utf8"),
@@ -275,6 +277,8 @@ test("bundled Agent Skill owns onboarding, watch, and issue instructions", async
     await readFile(new URL("references/onboarding.md", skillRoot), "utf8"),
     await readFile(new URL("references/operations.md", skillRoot), "utf8"),
     await readFile(new URL("references/watch-and-feedback.md", skillRoot), "utf8"),
+    await readFile(new URL("../../skills/yourlandingsucks-maintainer/SKILL.md", import.meta.url), "utf8"),
+    await readFile(new URL("../../skills/yourlandingsucks-maintainer/references/workflow.md", import.meta.url), "utf8"),
   ].join("\n");
   for (const required of [
     "yls site draft",
@@ -287,9 +291,20 @@ test("bundled Agent Skill owns onboarding, watch, and issue instructions", async
     "browser_unavailable",
     "yls issue verify",
     "human confirms its proposal",
-    "Never export, upload, commit, or push",
+    "Never submit, upload, commit, or push",
     "contextual recommendation cards",
     "Never ask the human to run a command",
+    "yls feedback prepare",
+    "yls feedback register",
+    "yls feedback status",
+    "yls maintainer plan",
+    "yls maintainer register",
+    "yls maintainer begin",
+    "yls maintainer ingest",
+    "yls maintainer triage",
+    "yls maintainer finish",
+    "untrusted data",
+    "draft PR",
   ]) {
     assert.match(contents, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   }
