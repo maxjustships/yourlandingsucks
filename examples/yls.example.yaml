@@ -1,0 +1,87 @@
+schemaVersion: 1
+
+site:
+  url: https://example.com
+  maxPages: 50
+  maxDepth: 3
+  delayMs: 75
+  navigationTimeoutMs: 15000
+  respectRobots: true
+  stripQuery: true
+  include:
+    - /**
+  exclude:
+    - /api/**
+    - /admin/**
+    - /auth/**
+
+pages:
+  - match:
+      - /
+      - /pricing
+      - /features/**
+    role: conversion
+    goal: signup_completed
+  - match:
+      - /blog/**
+    role: acquisition
+    goal: visit_product_page
+  - match:
+      - /docs/**
+    role: documentation
+    goal: find_answer
+  - match:
+      - /legal/**
+      - /privacy
+      - /terms
+    role: informational
+
+product:
+  audience: indie software founders
+  problem: landing pages are shipped but never systematically checked
+  promise: evidence-backed public-page improvement through the user's coding agent
+  primaryAction: connect a landing
+  trafficSource: founder communities
+
+guardrails:
+  viewports:
+    - name: desktop
+      width: 1440
+      height: 900
+    - name: mobile
+      width: 390
+      height: 844
+  accessibilityImpacts:
+    - critical
+    - serious
+  maxLcpMs: 2500
+  maxCls: 0.1
+
+browser:
+  channel: chrome
+  headless: true
+  settleMs: 150
+
+analytics:
+  provider: none
+  thresholds:
+    optimizeMinSessions: 1000
+    optimizeMinConversions: 100
+
+artifacts:
+  directory: .yls
+  screenshots: true
+
+watch:
+  enabled: true
+  schedule:
+    naturalLanguage: every weekday at 09:00 in Yekaterinburg
+    cron: 0 9 * * 1-5
+    timezone: Asia/Yekaterinburg
+  rules:
+    - id: public-surface-health
+      instruction: Report new verified defects and material route, title, or H1 changes.
+      autonomy: observe
+    - id: conversion-regression
+      instruction: Propose a reversible fix when the primary conversion path gains a verified defect.
+      autonomy: propose

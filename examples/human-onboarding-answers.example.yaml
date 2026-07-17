@@ -1,0 +1,10 @@
+schemaVersion: 1
+proposalId: proposal-marketing-replace-with-real-id
+humanConfirmed: true
+answers:
+  - questionId: confirm-scope
+    answer: Include the public pricing and docs routes; exclude auth, account, checkout, and admin.
+  - questionId: confirm-goals
+    answer: Wake me for HTTP/accessibility regressions and changes to the H1 or public route set.
+  - questionId: confirm-cadence
+    answer: Run weekdays at 09:00 Asia/Yekaterinburg; observe only for copy changes.

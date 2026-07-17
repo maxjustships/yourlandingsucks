@@ -1,0 +1,18 @@
+schemaVersion: 1
+siteId: marketing
+configPath: yls-sites/marketing.yaml
+agent: coding-agent
+assumptions:
+  - The origin and all included routes are public and safe for read-only navigation.
+  - Pricing and signup are conversion surfaces; docs and legal pages are informational.
+  - A weekday 09:00 Asia/Yekaterinburg check is frequent enough.
+questions:
+  - id: confirm-scope
+    prompt: Which routes or flows must be included or excluded?
+    assumedAnswer: Exclude auth, account, admin, API, and checkout routes.
+  - id: confirm-goals
+    prompt: Which changes should wake the agent or create a proposal?
+    assumedAnswer: New verified defects, route drift, and changes to the main promise.
+  - id: confirm-cadence
+    prompt: Should the proposed schedule and observe/propose autonomy be activated?
+    assumedAnswer: Yes; do not deploy or change product claims autonomously.

@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible problem without sharing private run data.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach `.yls/`, credentials, private URLs, or raw analytics. Reduce evidence to a safe fixture when possible.
+  - type: input
+    id: version
+    attributes:
+      label: YLS version
+      placeholder: 0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Node version, OS, browser channel
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Safe reproduction
+      description: Include commands and a public fixture or minimal repository only.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true

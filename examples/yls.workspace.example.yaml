@@ -1,0 +1,17 @@
+schemaVersion: 1
+sites:
+  - id: marketing
+    configPath: yls-sites/marketing.yaml
+    status: confirmed
+    proposalId: proposal-marketing-example000
+    configHash: generated-by-yls-site-confirm
+    confirmedAt: 2026-07-17T09:00:00.000Z
+  - id: docs
+    configPath: yls-sites/docs.yaml
+    status: confirmed
+    proposalId: proposal-docs-example0000000
+    configHash: generated-by-yls-site-confirm
+    confirmedAt: 2026-07-17T09:05:00.000Z
+
+# This file is illustrative. Do not hand-author configHash or confirmation
+# metadata; `yls site confirm` writes the authoritative registry.

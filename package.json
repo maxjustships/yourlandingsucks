@@ -1,0 +1,58 @@
+{
+  "name": "yourlandingsucks",
+  "version": "0.1.0",
+  "description": "Local-first, agent-driven evidence and verification for public website surfaces.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxjustships/yourlandingsucks.git"
+  },
+  "homepage": "https://github.com/maxjustships/yourlandingsucks#readme",
+  "bugs": {
+    "url": "https://github.com/maxjustships/yourlandingsucks/issues"
+  },
+  "type": "module",
+  "bin": {
+    "yls": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "skills",
+    "README.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "clean": "node scripts/clean.mjs",
+    "test": "npm run build && node --test --test-concurrency=1 test/unit/core.test.mjs test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/multi-site-watch.test.mjs",
+    "test:unit": "npm run build && node --test --test-concurrency=1 test/unit/core.test.mjs",
+    "test:integration": "npm run build && node --test --test-concurrency=1 test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/multi-site-watch.test.mjs",
+    "check": "npm run clean && npm run test",
+    "smoke:install": "npm run build && node scripts/install-smoke.mjs",
+    "verify:v0": "npm run check"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "landing-page",
+    "accessibility",
+    "cro",
+    "playwright",
+    "ai-agent",
+    "cli"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "axe-core": "^4.10.3",
+    "playwright": "^1.54.1",
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.14",
+    "typescript": "^5.8.3"
+  }
+}

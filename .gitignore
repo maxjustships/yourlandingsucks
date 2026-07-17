@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.yls/
+.env
+.env.*
+!.env.example
+*.tgz
+/feedback-inbox/
+/rule-health.json
+coverage/
+output/playwright/
+npm-debug.log*
