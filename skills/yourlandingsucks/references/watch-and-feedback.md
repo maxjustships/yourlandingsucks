@@ -84,15 +84,70 @@ npx --no-install yls watch unregister --site SITE_ID --json
 Claims, blocks, rejections, verification outcomes, and recurrence are written
 to the local ledger automatically and influence later issue selection.
 
-Never export feedback as part of a normal audit or watch. When the human
-explicitly requests an export and names a destination, run:
+Prepare upstream feedback when the human says a YLS result is wrong, a YLS
+operation fails, or a missing YLS capability creates repeated manual work. Do
+not confuse feedback about the public site with feedback about YLS itself.
+
+For reviewed finding outcomes, prepare a rule bundle from the relevant run:
 
 ```bash
-npx --no-install yls feedback export --run RUN_ID --output CHOSEN_FILE --json
+npx --no-install yls feedback prepare --type rule_outcome --run RUN_ID --site SITE_ID --json
 ```
 
-Show the exact sanitized payload and destination before any separate upload,
-commit, or push. Those actions require their own authorization.
+For a YLS tool failure, summarize the behavior without a URL, repository name,
+local path, code, credential, screenshot, stack trace, or copied page content:
+
+```bash
+npx --no-install yls feedback prepare --type tool_bug --summary SAFE_SUMMARY --operation SAFE_OPERATION --error-code SAFE_ERROR_CODE --json
+```
+
+For a product request, prepare only the smallest generic capability statement:
+
+```bash
+npx --no-install yls feedback prepare --type feature_request --summary SAFE_SUMMARY --json
+```
+
+YLS rejects obvious URLs, paths, credentials, unknown fields, and modified
+fingerprints. It returns the exact bundle plus a provider-neutral submission
+plan. Inspect both. Show the human the destination, title, and complete JSON;
+ask for the single decision “send this sanitized report?” Never add free-form
+project context to the generated issue body.
+
+After approval, use the agent host's existing GitHub capability to create the
+issue exactly from `submission.repository`, `submission.labels`,
+`submission.title`, and `submission.body`. YLS must not receive a GitHub token.
+Record the real external receipt only after GitHub confirms creation:
+
+```bash
+npx --no-install yls feedback register --report REPORT_ID --provider github --external-id ISSUE_ID --external-url ISSUE_URL --json
+```
+
+If creation fails, leave the report `prepared` and say it was not sent. Never
+register an invented issue. Check local receipts when the human asks what
+happened to submitted feedback:
+
+```bash
+npx --no-install yls feedback status --report REPORT_ID --json
+```
+
+When the upstream provider reports a decision, reflect only that observed
+state. A resolved report requires the released version that contains the fix:
+
+```bash
+npx --no-install yls feedback update --report REPORT_ID --status resolved --fixed-in VERSION --json
+```
+
+Offer to update the project-local YLS version only after the version exists in
+the configured public registry. After separate approval, update it exactly and
+repeat the original operation or audit before claiming the loop is closed.
+
+Security reports, suspected credential exposure, and exploit details must not
+use a public feedback issue. Stop and route them through the repository's
+private vulnerability-reporting surface.
+
+The legacy `feedback export` command writes a selected local JSON file and does
+not create a submission receipt. Use it only when the human explicitly asks
+for a local export to a named destination.
 
 To improve YLS across reviewed project exports, aggregate only an explicitly
 selected inbox:

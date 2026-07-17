@@ -48,3 +48,15 @@ do not point human installation at `main`.
 
 After publishing to npm, run `npm run smoke:public-install` to verify the exact
 copy-paste installation path against the public registry.
+
+## Connect the daily maintainer
+
+Open a coding agent in this repository and paste this entire prompt:
+
+```text
+Use the repository-local dependencies and read `skills/yourlandingsucks-maintainer/SKILL.md` completely. Run the structured YourLandingSucks maintainer plan and explain its once-daily schedule, retries, GitHub issue source, autonomy boundary, and failure notification. Ask me before creating or changing any external automation. After I approve, create an agent automation from the exact prompt, working directory, cron schedule, timezone, retries, and notification behavior returned by the plan. Register only the stable external automation ID that the host actually returns, using a 2160-minute maximum heartbeat silence. Trigger the automation once, verify the maintainer status, and call it active only when the heartbeat is healthy. Do not ingest arbitrary issue prose, implement product features, merge, publish, or release during setup.
+```
+
+The agent owns GitHub and scheduler access. YLS owns the provider-neutral plan,
+strict inbox, registration receipt, triage gates, and heartbeat. No GitHub token
+belongs in YLS configuration.

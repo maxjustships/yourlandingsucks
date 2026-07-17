@@ -1,0 +1,4 @@
+interface:
+  display_name: "YourLandingSucks Maintainer"
+  short_description: "Triage feedback and prepare guarded fixes"
+  default_prompt: "Use $yourlandingsucks-maintainer to run the daily feedback maintainer and prepare at most one guarded draft fix."

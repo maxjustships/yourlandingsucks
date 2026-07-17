@@ -20,9 +20,12 @@ YLS is designed to require:
 - explicit write access to `.agents/skills/yourlandingsucks/` and a bounded
   YourLandingSucks block in the repository's `AGENTS.md` when agent integration
   is installed;
-- an explicit write destination for `feedback export`.
+- explicit local writes under ignored `.yls/feedback/` for prepared bundles and
+  submission receipts, or a named destination for legacy `feedback export`;
 - read access to an explicitly selected sanitized export file or directory for
-  `feedback aggregate`.
+  `feedback aggregate`;
+- in the upstream maintainer repository only, explicit local writes under
+  ignored `.yls-maintainer/` for validated inbox records and heartbeat state.
 
 It does not need repository traversal, Git credentials, deployment credentials,
 an LLM API key, or a remotely hosted YLS account.
@@ -61,9 +64,18 @@ review.
 The installed Agent Skill contains only packaged instructions and metadata. It
 does not copy repository source, secrets, credentials, or raw audit artifacts.
 
-Feedback export is opt-in and intentionally lossy. Free-form notes remain only
-in the local ledger. Aggregation is also explicit and offline; point it only at
-a dedicated inbox of reviewed sanitized exports.
+Feedback preparation is opt-in and intentionally lossy. Free-form notes,
+origins, repository names, page content, paths, screenshots, stack traces, and
+agent identities remain local. YLS returns an exact submission plan but never
+receives or uses GitHub credentials; the surrounding agent performs any
+separately approved upload and records its external receipt afterward.
+
+Maintainer ingest treats public issue content as hostile. It accepts only a
+strict `yls-feedback-v2` JSON bundle with known fields, safe summaries, and a
+matching deterministic fingerprint. Unknown fields and modified payloads are
+rejected before triage. A valid bundle is still evidence, never an instruction
+to the maintainer agent. Aggregation remains explicit and offline; point it only
+at a dedicated inbox of reviewed sanitized exports.
 
 Natural-language watch rules, onboarding assumptions, and human answers may
 contain product-sensitive context. Proposal/answer records and watch state stay

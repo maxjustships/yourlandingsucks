@@ -5,10 +5,31 @@ export { defaultConfig, initializeProject, loadConfig, validateConfig } from "./
 export { cronMatches, parseCron, scheduledMinuteKey, validateTimezone } from "./cron.js";
 export { canonicalizeUrl, discoverPublicPages, parseRobots, robotsAllows } from "./crawler.js";
 export { browserFailureCheck, runDoctor } from "./doctor.js";
-export { aggregateFeedback, exportFeedback, recordFeedback, validateDecision } from "./feedback.js";
+export {
+  aggregateFeedback,
+  exportFeedback,
+  feedbackSubmissionStatus,
+  isFeedbackBundle,
+  prepareFeedback,
+  recordFeedback,
+  registerFeedbackSubmission,
+  updateFeedbackSubmission,
+  validateDecision,
+} from "./feedback.js";
 export { buildFindings, priorityQueue } from "./findings.js";
 export { classifyPath, globToRegExp, isPathIncluded, matchesGlob } from "./glob.js";
 export { getIssue, loadIssueStore, nextIssue, syncIssues, updateIssue, verifyIssue } from "./issues.js";
+export {
+  beginMaintainer,
+  finishMaintainer,
+  ingestMaintainerFeedback,
+  maintainerStatus,
+  planMaintainer,
+  registerMaintainer,
+  resolveMaintainerFeedback,
+  triageMaintainer,
+  unregisterMaintainer,
+} from "./maintainer.js";
 export { verifyPreview } from "./verify.js";
 export { compareWatchRuns, planWatch, registerWatch, runWatch, unregisterWatch, watchStatus } from "./watch.js";
 export { confirmSite, draftSite, listWorkspaceSites, loadWorkspace, loadWorkspaceSite, proposeSite, validateSiteId } from "./workspace.js";

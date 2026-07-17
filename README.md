@@ -3,7 +3,7 @@
 [![CI](https://github.com/maxjustships/yourlandingsucks/actions/workflows/ci.yml/badge.svg)](https://github.com/maxjustships/yourlandingsucks/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-Your website is public. Its failure modes should be, too.
+Your website is public. Its failure modes should not stay invisible.
 
 YourLandingSucks (`yls`) gives your coding agent a deterministic browser-audit,
 monitoring, issue, and verification layer for every public site attached to a
@@ -35,7 +35,7 @@ Open your coding agent in the project you want to monitor and paste this entire
 prompt:
 
 ```text
-Install the exact public prerelease `yourlandingsucks@0.1.0-alpha.0` in this repository as a project-local development dependency. Run its project-local `yls agent install --json`, then read and follow `.agents/skills/yourlandingsucks/SKILL.md`. Inspect this repository and its deployment configuration to discover every public website it owns. Inspect each public site read-only and infer a separate safe scope, purpose, critical journeys, exclusions, monitoring schedule, and autonomy policy. Present one onboarding proposal grouped by site, clearly mark assumptions, and ask me only for decisions that cannot be safely inferred. Do not activate any site until I confirm its proposal. If recurring monitoring is requested after confirmation, prepare the external automation plan, ask before creating or changing that automation, register only an external automation that was actually created, run one safe heartbeat, and do not call monitoring active until its status is healthy. If the browser check fails, explain the required local browser download and ask before applying its remediation. Do not submit forms, deploy, push, export data, or make product changes during onboarding. Keep YLS commands, configuration, artifacts, and state internal; after onboarding I will manage it only with natural-language requests through my agent.
+Install package `yourlandingsucks` at the exact version `0.1.0-alpha.1` from the official public npm registry `https://registry.npmjs.org/` as a project-local development dependency in this repository. Never install it globally, from GitHub, from a branch, or at another version. Use this repository's existing JavaScript package manager and its exact-version flag. If this repository has no JavaScript package manifest, create a minimal private npm manifest used only for local developer tooling, then run `npm install --save-dev --save-exact --registry=https://registry.npmjs.org/ yourlandingsucks@0.1.0-alpha.1`; do not alter the application's runtime or deployment package manager. Invoke only the installed project-local binary and run `npx --no-install yls agent install --json`, then read and follow `.agents/skills/yourlandingsucks/SKILL.md`. Inspect this repository and its deployment configuration to discover every public website it owns. Inspect each public site read-only and infer a separate safe scope, purpose, critical journeys, exclusions, monitoring schedule, and autonomy policy. Present one onboarding proposal grouped by site, clearly mark assumptions, and ask me only for decisions that cannot be safely inferred. Do not activate any site until I confirm its proposal. If recurring monitoring is requested after confirmation, prepare the external automation plan, ask before creating or changing that automation, register only an external automation that was actually created, run one safe heartbeat, and do not call monitoring active until its status is healthy. If the browser check fails, explain the required local browser download and ask before applying its remediation. Do not submit forms, deploy, push, send feedback, or make product changes during onboarding. Keep YLS commands, configuration, artifacts, and state internal; after onboarding I will manage it only with natural-language requests through my agent.
 ```
 
 There is nothing to configure before pasting it. The agent installs the local
@@ -47,20 +47,25 @@ run a heartbeat, and verify that YLS reports it healthy. Fresh compatible agent
 sessions can then respond to ordinary requests such as “check my public pages,”
 “suggest three improvements,” or “watch this every weekday.”
 
-## What it feels like
+## Why you should care
 
-This is the result of a blind fresh-session test against a deliberately broken
-four-page fixture. The agent received only:
+Generated sites make shipping a new page almost free. They do not make noticing
+what broke any easier. A form can stop working, a primary action can disappear
+on mobile, copy can drift away from the product, or a new route can become
+inaccessible while every deployment still reports green.
 
-> Check this project's public pages, suggest up to three concrete improvements,
-> and do not fix anything.
+Those failures rarely arrive as a clean bug report. They show up as visitors
+who do not understand the promise, do not trust the page, or leave before doing
+the thing the page exists for. With little traffic, analytics cannot explain
+why. With more traffic, waiting for a dashboard means paying for the mistake
+until enough people have encountered it.
 
-It audited desktop and mobile pages, changed no source files, and returned three
-prioritized recommendations: add accessible names to the hero image and pricing
-form, remove an unexpected background form submission, and repair a broken
-global-navigation route. Each recommendation included observed evidence, why it
-blocked the page goal, a source-aware change, authority, and verification
-conditions. It did not expose commands, YAML, or internal artifacts.
+YLS gives the coding agent a memory and a feedback loop for every public
+surface: what the page is meant to do, what must never regress, what evidence
+was observed, which change was attempted, and whether a preview actually fixed
+it. You ask in natural language; the agent does the auditing, prioritization,
+bounded implementation, and verification without turning you into the operator
+of another testing stack.
 
 ## Agent compatibility
 
@@ -88,8 +93,11 @@ conditions. It did not expose commands, YAML, or internal artifacts.
   status, and finding changes when an external scheduler invokes the registered
   watch plan;
 - accepts optional aggregate analytics from a local snapshot or PostHog;
-- keeps telemetry off and exports sanitized feedback only after an explicit
-  request.
+- keeps telemetry off, prepares strict sanitized upstream feedback only after
+  an explicit request, and records the external submission receipt;
+- provides a provider-neutral daily maintainer lifecycle that validates
+  incoming reports, deduplicates them, gates product decisions, and lets an
+  agent prepare at most one tested draft fix per run.
 
 ## The agent loop
 
@@ -122,11 +130,20 @@ tracks its registration and heartbeat, while the coding agent interprets
 natural-language rules and stays inside the autonomy level confirmed for each
 site.
 
+When a project reports a YLS false positive, tool failure, or missing
+capability, the same pattern continues upstream. The project agent prepares a
+privacy-reviewed bundle and, after approval, submits it using the human's
+existing GitHub access. A separately registered maintainer agent validates and
+triages those reports once per day, prepares only bounded draft fixes, and
+returns the released version to the originating project's receipt.
+
 ## V0 limitations
 
 - This is a local CLI and Agent Skill, not a hosted SaaS or background daemon.
 - YLS does not create a scheduler by itself; the agent composes that workflow
   from the host's automation primitive after explicit permission.
+- The upstream maintainer also depends on a registered external agent
+  automation; heartbeat state detects missing, stale, changed, and failed runs.
 - Only Codex-style Agent Skill/`AGENTS.md` persistence is forward-tested today.
 - Heuristic recommendations and behavioral signals are hypotheses, not proven
   conversion lift.

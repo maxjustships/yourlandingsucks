@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const expectedVersion = "0.1.0-alpha.0";
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const expectedVersion = JSON.parse(await readFile(join(root, "package.json"), "utf8")).version;
 const packageSpec = process.env.YLS_PUBLIC_SPEC ?? `yourlandingsucks@${expectedVersion}`;
 const npmCli = process.env.npm_execpath;
 

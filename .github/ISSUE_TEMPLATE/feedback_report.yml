@@ -1,0 +1,20 @@
+name: Sanitized YLS agent feedback
+description: Submit a generated yls-feedback-v2 bundle without project data
+title: "[YLS feedback] "
+labels:
+  - "feedback:report"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use the exact bundle produced by `yls feedback prepare`. Do not add URLs,
+        repository names, source code, logs, screenshots, credentials, or security details.
+        Security reports belong in private vulnerability reporting.
+  - type: textarea
+    id: bundle
+    attributes:
+      label: Sanitized feedback bundle
+      description: Paste the complete generated yls-feedback-v2 JSON object.
+      render: json
+    validations:
+      required: true

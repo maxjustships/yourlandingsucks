@@ -4,8 +4,27 @@ import { checkAgentIntegration, installAgentIntegration } from "./agent-integrat
 import { executeAuditRun } from "./artifacts.js";
 import { initializeProject, loadConfig } from "./config.js";
 import { runDoctor } from "./doctor.js";
-import { aggregateFeedback, exportFeedback, recordFeedback } from "./feedback.js";
+import {
+  aggregateFeedback,
+  exportFeedback,
+  feedbackSubmissionStatus,
+  prepareFeedback,
+  recordFeedback,
+  registerFeedbackSubmission,
+  updateFeedbackSubmission,
+} from "./feedback.js";
 import { getIssue, loadIssueStore, nextIssue, syncIssues, updateIssue, verifyIssue } from "./issues.js";
+import {
+  beginMaintainer,
+  finishMaintainer,
+  ingestMaintainerFeedback,
+  maintainerStatus,
+  planMaintainer,
+  registerMaintainer,
+  resolveMaintainerFeedback,
+  triageMaintainer,
+  unregisterMaintainer,
+} from "./maintainer.js";
 import { verifyPreview } from "./verify.js";
 import { planWatch, registerWatch, runWatch, unregisterWatch, watchStatus } from "./watch.js";
 import { confirmSite, draftSite, listWorkspaceSites, loadWorkspaceSite, proposeSite } from "./workspace.js";
@@ -84,7 +103,20 @@ Usage:
   yls issue verify --id <issue-id> --preview <origin> [--agent <name>] [--site <id>] [--json]
   yls feedback --run <run-id> --finding <id> --decision <value> [--reason-code <code>] [--note <local-only>] [--agent <name>] [--site <id>] [--json]
   yls feedback export --run <run-id> --output <file> [--site <id>] [--json]
+  yls feedback prepare --type <rule_outcome|tool_bug|feature_request> [--run <run-id>] [--summary <safe-text>] [--operation <id>] [--error-code <id>] [--site <id>] [--json]
+  yls feedback register --report <report-id> --provider <id> --external-id <id> [--external-url <https-url>] [--json]
+  yls feedback status [--report <report-id>] [--json]
+  yls feedback update --report <report-id> --status <accepted|rejected|resolved> [--fixed-in <version>] [--json]
   yls feedback aggregate --input <export-file-or-directory> [--output <file>] [--json]
+  yls maintainer plan [--repository <owner/name>] [--json]
+  yls maintainer register --provider <id> --external-id <id> --max-silence-minutes <n> [--repository <owner/name>] [--json]
+  yls maintainer status [--repository <owner/name>] [--at <iso-time>] [--json]
+  yls maintainer unregister [--json]
+  yls maintainer begin [--repository <owner/name>] [--at <iso-time>] [--json]
+  yls maintainer ingest --input <bundle.json> --provider <id> --external-id <id> [--external-url <https-url>] [--json]
+  yls maintainer triage [--json]
+  yls maintainer resolve --report <report-id> --status <accepted|rejected|resolved> [--fixed-in <version>] [--json]
+  yls maintainer finish --run <run-id> --status <completed|failed> [--error-code <id>] [--at <iso-time>] [--json]
 
 YLS never calls an LLM. Agent-Skill/AGENTS.md-aware coding agents discover the durable capability; other shell-capable agents can use the same local primitives.`;
 }
@@ -132,13 +164,117 @@ async function main(): Promise<void> {
     throw new Error(`Unknown agent command: ${subcommand ?? "(missing)"}`);
   }
 
-  if (command === "feedback" && parsed.positionals[1] === "aggregate") {
-    const aggregate = await aggregateFeedback({
-      input: stringFlag(parsed, "input", true)!,
-      ...(stringFlag(parsed, "output") ? { output: stringFlag(parsed, "output") } : {}),
-    });
-    print(aggregate, json);
-    return;
+  if (command === "feedback") {
+    const subcommand = parsed.positionals[1];
+    if (subcommand === "aggregate") {
+      const aggregate = await aggregateFeedback({
+        input: stringFlag(parsed, "input", true)!,
+        ...(stringFlag(parsed, "output") ? { output: stringFlag(parsed, "output") } : {}),
+      });
+      print(aggregate, json);
+      return;
+    }
+    if (subcommand === "register") {
+      print(await registerFeedbackSubmission({
+        reportId: stringFlag(parsed, "report", true)!,
+        provider: stringFlag(parsed, "provider", true)!,
+        externalId: stringFlag(parsed, "external-id", true)!,
+        ...(stringFlag(parsed, "external-url") ? { externalUrl: stringFlag(parsed, "external-url") } : {}),
+      }), json);
+      return;
+    }
+    if (subcommand === "status") {
+      print(await feedbackSubmissionStatus({
+        ...(stringFlag(parsed, "report") ? { reportId: stringFlag(parsed, "report") } : {}),
+      }), json);
+      return;
+    }
+    if (subcommand === "update") {
+      print(await updateFeedbackSubmission({
+        reportId: stringFlag(parsed, "report", true)!,
+        status: stringFlag(parsed, "status", true)!,
+        ...(stringFlag(parsed, "fixed-in") ? { fixedIn: stringFlag(parsed, "fixed-in") } : {}),
+      }), json);
+      return;
+    }
+    if (subcommand === "prepare" && !stringFlag(parsed, "run")) {
+      print(await prepareFeedback({
+        reportType: stringFlag(parsed, "type", true)!,
+        ...(stringFlag(parsed, "summary") ? { summary: stringFlag(parsed, "summary") } : {}),
+        ...(stringFlag(parsed, "operation") ? { operation: stringFlag(parsed, "operation") } : {}),
+        ...(stringFlag(parsed, "error-code") ? { errorCode: stringFlag(parsed, "error-code") } : {}),
+      }), json);
+      return;
+    }
+  }
+
+  if (command === "maintainer") {
+    const subcommand = parsed.positionals[1];
+    const repository = stringFlag(parsed, "repository");
+    if (subcommand === "plan") {
+      print(await planMaintainer({ ...(repository ? { repository } : {}) }), json);
+      return;
+    }
+    if (subcommand === "register") {
+      print(await registerMaintainer({
+        provider: stringFlag(parsed, "provider", true)!,
+        externalId: stringFlag(parsed, "external-id", true)!,
+        maxSilenceMinutes: Number(stringFlag(parsed, "max-silence-minutes", true)),
+        ...(repository ? { repository } : {}),
+      }), json);
+      return;
+    }
+    if (subcommand === "status") {
+      const result = await maintainerStatus({
+        ...(repository ? { repository } : {}),
+        ...(stringFlag(parsed, "at") ? { at: stringFlag(parsed, "at") } : {}),
+      });
+      print(result, json);
+      if (result.status === "attention_required") process.exitCode = 1;
+      return;
+    }
+    if (subcommand === "unregister") {
+      print(await unregisterMaintainer(), json);
+      return;
+    }
+    if (subcommand === "begin") {
+      print(await beginMaintainer({
+        ...(repository ? { repository } : {}),
+        ...(stringFlag(parsed, "at") ? { at: stringFlag(parsed, "at") } : {}),
+      }), json);
+      return;
+    }
+    if (subcommand === "ingest") {
+      print(await ingestMaintainerFeedback({
+        input: stringFlag(parsed, "input", true)!,
+        provider: stringFlag(parsed, "provider", true)!,
+        externalId: stringFlag(parsed, "external-id", true)!,
+        ...(stringFlag(parsed, "external-url") ? { externalUrl: stringFlag(parsed, "external-url") } : {}),
+      }), json);
+      return;
+    }
+    if (subcommand === "triage") {
+      print(await triageMaintainer(), json);
+      return;
+    }
+    if (subcommand === "resolve") {
+      print(await resolveMaintainerFeedback({
+        reportId: stringFlag(parsed, "report", true)!,
+        status: stringFlag(parsed, "status", true)!,
+        ...(stringFlag(parsed, "fixed-in") ? { fixedIn: stringFlag(parsed, "fixed-in") } : {}),
+      }), json);
+      return;
+    }
+    if (subcommand === "finish") {
+      print(await finishMaintainer({
+        runId: stringFlag(parsed, "run", true)!,
+        status: stringFlag(parsed, "status", true)!,
+        ...(stringFlag(parsed, "error-code") ? { errorCode: stringFlag(parsed, "error-code") } : {}),
+        ...(stringFlag(parsed, "at") ? { at: stringFlag(parsed, "at") } : {}),
+      }), json);
+      return;
+    }
+    throw new Error(`Unknown maintainer command: ${subcommand ?? "(missing)"}`);
   }
 
   if (command === "site") {
@@ -371,6 +507,17 @@ async function main(): Promise<void> {
         output: stringFlag(parsed, "output", true)!,
       });
       print(payload, true);
+      return;
+    }
+    if (subcommand === "prepare") {
+      print(await prepareFeedback({
+        reportType: stringFlag(parsed, "type", true)!,
+        ...(stringFlag(parsed, "summary") ? { summary: stringFlag(parsed, "summary") } : {}),
+        ...(stringFlag(parsed, "operation") ? { operation: stringFlag(parsed, "operation") } : {}),
+        ...(stringFlag(parsed, "error-code") ? { errorCode: stringFlag(parsed, "error-code") } : {}),
+        config: loaded.config,
+        runId: stringFlag(parsed, "run", true)!,
+      }), json);
       return;
     }
     const event = await recordFeedback({

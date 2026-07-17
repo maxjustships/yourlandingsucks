@@ -21,8 +21,9 @@ language and compose the smallest safe workflow that satisfies it.
   into a site proposal. Ask for confirmation before activating or changing a
   schedule, external automation, or autonomy level. Follow the registration and
   heartbeat protocol; never equate confirmed configuration with active watch.
-- **Learn from feedback:** use local outcomes automatically. Export or aggregate
-  only when the human explicitly requests the action and destination.
+- **Learn from feedback:** use local outcomes automatically. Prepare upstream
+  feedback when YLS itself is wrong or missing a needed capability, but submit
+  only after the human approves the exact sanitized payload and destination.
 
 Combine intents when the user does. If a request is ambiguous, choose the
 read-only interpretation and make progress. Ask a question only when the answer

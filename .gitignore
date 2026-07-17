@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .yls/
+.yls-maintainer/
 .env
 .env.*
 !.env.example
