@@ -251,7 +251,7 @@ test("runtime dependencies contain no model provider SDK", async () => {
 
 test("README install is one human copy-paste prompt with no blanks to fill", async () => {
   const readme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
-  const install = readme.match(/## Install\n([\s\S]*?)(?=\n## )/)?.[1];
+  const install = readme.match(/## Install\r?\n([\s\S]*?)(?=\r?\n## )/)?.[1];
   assert.ok(install, "README must contain an Install section");
   for (const required of [
     "yourlandingsucks@0.1.0-alpha.0",
