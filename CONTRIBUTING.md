@@ -30,3 +30,10 @@ Human-facing setup stays in the single copy-paste prompt in `README.md`. It must
 not require placeholders, tokens, or pre-filled configuration. Operational
 instructions belong in `skills/yourlandingsucks/`; keep that skill packable and
 validate it whenever its workflow changes.
+
+Agent-integration changes must prove idempotent installation, preservation of
+unrelated `AGENTS.md` content, drift repair, and refusal of unmanaged,
+malformed, or symlinked targets. Keep the human-facing contract prompt-native:
+the agent may use commands and artifacts internally, but must translate them
+into site outcomes and product decisions. Run the packaged install smoke and a
+fresh-session agent test when that discovery contract changes.

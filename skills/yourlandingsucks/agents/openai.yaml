@@ -1,4 +1,4 @@
 interface:
   display_name: "YourLandingSucks"
-  short_description: "Onboard and operate public-site audits"
-  default_prompt: "Use $yourlandingsucks to install, onboard, and safely monitor this project's public sites."
+  short_description: "Prompt-native public-site improvement agent"
+  default_prompt: "Use $yourlandingsucks to inspect the public sites in this project and propose up to three contextual improvements."

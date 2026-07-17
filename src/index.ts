@@ -1,4 +1,5 @@
 export { classifyTraffic, createAnalyticsAdapter, getAnalyticsSnapshot } from "./analytics.js";
+export { checkAgentIntegration, installAgentIntegration } from "./agent-integration.js";
 export { executeAuditRun, loadRun, renderBrief } from "./artifacts.js";
 export { defaultConfig, initializeProject, loadConfig, validateConfig } from "./config.js";
 export { cronMatches, parseCron, scheduledMinuteKey, validateTimezone } from "./cron.js";

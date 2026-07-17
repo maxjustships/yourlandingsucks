@@ -35,12 +35,15 @@ Open your coding agent in the project you want to monitor and paste this entire
 prompt:
 
 ```text
-Install YourLandingSucks in this repository from git+ssh://git@github.com/maxjustships/yourlandingsucks.git#main as a project-local development dependency. After installation, read and follow the bundled Agent Skill at node_modules/yourlandingsucks/skills/yourlandingsucks/SKILL.md. Inspect this repository and its deployment configuration to discover every public website it owns. Inspect each public site read-only and infer a separate safe scope, purpose, critical journeys, exclusions, monitoring schedule, and autonomy policy. Present one onboarding proposal grouped by site, clearly mark assumptions, and ask me only for decisions that cannot be safely inferred. Do not activate any site until I confirm its proposal. Do not submit forms, deploy, push, export data, or make product changes during onboarding.
+Install YourLandingSucks in this repository from git+ssh://git@github.com/maxjustships/yourlandingsucks.git#main as a project-local development dependency. Run its project-local `yls agent install --json`, then read and follow `.agents/skills/yourlandingsucks/SKILL.md`. Inspect this repository and its deployment configuration to discover every public website it owns. Inspect each public site read-only and infer a separate safe scope, purpose, critical journeys, exclusions, monitoring schedule, and autonomy policy. Present one onboarding proposal grouped by site, clearly mark assumptions, and ask me only for decisions that cannot be safely inferred. Do not activate any site until I confirm its proposal. Do not submit forms, deploy, push, export data, or make product changes during onboarding. Keep YLS commands, configuration, artifacts, and state internal; after onboarding I will manage it only with natural-language requests through my agent.
 ```
 
 There is nothing to configure before pasting it. The agent installs the local
-tool, proposes the sites and their rules, asks the smallest useful set of
-questions, and waits for confirmation before monitoring becomes active.
+tool and a durable project capability, proposes the sites and their rules, asks
+the smallest useful set of questions, and waits for confirmation before
+monitoring becomes active. Fresh agent sessions can then discover YLS from the
+project and respond to ordinary requests such as “check my public pages,”
+“suggest three improvements,” or “watch this every weekday.”
 
 ## Current V0
 

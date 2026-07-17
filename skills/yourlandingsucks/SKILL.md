@@ -1,6 +1,6 @@
 ---
 name: yourlandingsucks
-description: Install, onboard, audit, monitor, and improve one or more public websites with the project-local YourLandingSucks CLI. Use when an agent is asked to set up YLS, discover a repository's public sites, propose human-confirmed site rules, run audits or scheduled watch cycles, work local YLS issues, verify fixes on previews, or export sanitized feedback.
+description: Give a coding agent a prompt-native capability for installing, onboarding, auditing, criticizing, improving, fixing, comparing, verifying, and monitoring one or more public websites with the project-local YourLandingSucks CLI. Use for natural-language requests about landing pages, marketing sites, public app surfaces, site quality, conversion readiness, accessibility, performance, regressions, recurring watch rules, local YLS issues, preview verification, or sanitized feedback.
 ---
 
 # YourLandingSucks
@@ -8,6 +8,11 @@ description: Install, onboard, audit, monitor, and improve one or more public we
 Supply the intelligence around YLS. Let YLS own deterministic browser evidence,
 confirmed configuration hashes, schedule state, local issues, and preview
 verification.
+
+Treat YLS as an internal tool. Speak to the human in terms of their sites,
+goals, recommendations, decisions, and verified outcomes. Do not expose command
+names, artifact paths, configuration fields, or issue-state machinery unless the
+human explicitly asks for implementation details.
 
 ## Non-negotiable boundaries
 
@@ -30,6 +35,10 @@ verification.
 
 ## Select the workflow
 
+- For every request, first read
+  [references/intents-and-recommendations.md](references/intents-and-recommendations.md)
+  completely. Map the user's language to one or more primitives and follow its
+  recommendation contract.
 - For first installation, a new project, or a new site, read
   [references/onboarding.md](references/onboarding.md) completely and follow it.
 - For a one-off audit, local issue, code change, or preview verification, read

@@ -17,6 +17,9 @@ YLS is designed to require:
 - write access to the configured relative artifact directory;
 - explicit write access to `yls.workspace.yaml` and `yls-sites/` during
   human-confirmed site onboarding;
+- explicit write access to `.agents/skills/yourlandingsucks/` and a bounded
+  YourLandingSucks block in the repository's `AGENTS.md` when agent integration
+  is installed;
 - an explicit write destination for `feedback export`.
 - read access to an explicitly selected sanitized export file or directory for
   `feedback aggregate`.
@@ -44,11 +47,19 @@ For sensitive projects, run YLS with:
 The CLI is the primary integration contract and must not become a privileged
 proxy for arbitrary shell commands.
 
+Agent integration preserves instructions outside its marked block and refuses
+to replace an unmanaged skill directory, follow a symbolic link, or repair
+incomplete/duplicate markers. Review the generated block like any other
+repository-level agent instruction.
+
 ## Data handling
 
 Raw runs may contain public page copy, URLs, runtime messages, selectors, and
 screenshots. `.yls/` is ignored by default. Do not commit or upload it without
 review.
+
+The installed Agent Skill contains only packaged instructions and metadata. It
+does not copy repository source, secrets, credentials, or raw audit artifacts.
 
 Feedback export is opt-in and intentionally lossy. Free-form notes remain only
 in the local ledger. Aggregation is also explicit and offline; point it only at

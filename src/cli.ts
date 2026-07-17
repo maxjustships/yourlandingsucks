@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { dirname, resolve } from "node:path";
+import { checkAgentIntegration, installAgentIntegration } from "./agent-integration.js";
 import { executeAuditRun } from "./artifacts.js";
 import { initializeProject, loadConfig } from "./config.js";
 import { runDoctor } from "./doctor.js";
@@ -58,6 +59,8 @@ function help(): string {
   return `YourLandingSucks — evidence and verification for agent-driven public-page work
 
 Usage:
+  yls agent install [--json]
+  yls agent check [--json]
   yls init --url <origin> [--config yls.yaml] [--force]
   yls site draft --id <id> --url <origin> [--config <site.yaml>] [--proposal <draft.yaml>] [--agent <name>] [--force] [--json]
   yls site propose --file <proposal.yaml> [--replace] [--workspace yls.workspace.yaml] [--json]
@@ -101,6 +104,21 @@ async function main(): Promise<void> {
     });
     print({ status: "initialized", ...result }, json);
     return;
+  }
+
+  if (command === "agent") {
+    const subcommand = parsed.positionals[1];
+    if (subcommand === "install") {
+      print(await installAgentIntegration(), json);
+      return;
+    }
+    if (subcommand === "check") {
+      const result = await checkAgentIntegration();
+      print(result, json);
+      if (!result.current) process.exitCode = 1;
+      return;
+    }
+    throw new Error(`Unknown agent command: ${subcommand ?? "(missing)"}`);
   }
 
   if (command === "feedback" && parsed.positionals[1] === "aggregate") {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -8,6 +8,7 @@ import { parse } from "yaml";
 import {
   aggregateFeedback,
   canonicalizeUrl,
+  checkAgentIntegration,
   classifyPath,
   classifyTraffic,
   cronMatches,
@@ -15,6 +16,7 @@ import {
   defaultConfig,
   draftSite,
   initializeProject,
+  installAgentIntegration,
   isPathIncluded,
   parseRobots,
   robotsAllows,
@@ -76,6 +78,67 @@ test("init writes only the explicit config and private artifact directory", asyn
     await initializeProject({ url: "https://example.com", cwd });
     assert.deepEqual((await readdir(cwd)).sort(), [".yls", "yls.yaml"]);
     assert.equal(await readFile(join(cwd, ".yls", ".gitignore"), "utf8"), "*\n!.gitignore\n");
+  } finally {
+    await rm(cwd, { recursive: true, force: true });
+  }
+});
+
+test("agent install persists a fresh-session capability without clobbering project instructions", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "yls-agent-install-"));
+  try {
+    await writeFile(join(cwd, "AGENTS.md"), "# Existing project instructions\n\nKeep this line.\n");
+    const installed = await installAgentIntegration({ cwd });
+    assert.equal(installed.status, "installed");
+    assert.equal(installed.integration.current, true);
+    assert.equal(installed.integration.skillDirectory, ".agents/skills/yourlandingsucks");
+
+    const agents = await readFile(join(cwd, "AGENTS.md"), "utf8");
+    assert.match(agents, /# Existing project instructions/);
+    assert.match(agents, /Keep this line\./);
+    assert.match(agents, /yourlandingsucks:begin/);
+    assert.match(agents, /natural language into YLS primitives/i);
+    const installedSkill = await readFile(join(cwd, ".agents", "skills", "yourlandingsucks", "SKILL.md"), "utf8");
+    assert.match(installedSkill, /intents-and-recommendations\.md/);
+
+    const checked = await checkAgentIntegration({ cwd });
+    assert.equal(checked.status, "current");
+    assert.equal((await installAgentIntegration({ cwd })).status, "unchanged");
+
+    const copiedReference = join(cwd, ".agents", "skills", "yourlandingsucks", "references", "operations.md");
+    await writeFile(copiedReference, "tampered\n");
+    const stale = await checkAgentIntegration({ cwd });
+    assert.equal(stale.status, "stale");
+    assert.match(stale.problems.join(" "), /missing or changed/);
+    assert.equal((await installAgentIntegration({ cwd })).status, "updated");
+    assert.equal((await checkAgentIntegration({ cwd })).current, true);
+  } finally {
+    await rm(cwd, { recursive: true, force: true });
+  }
+});
+
+test("agent install refuses to overwrite an unmanaged skill directory", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "yls-agent-conflict-"));
+  try {
+    const skillDirectory = join(cwd, ".agents", "skills", "yourlandingsucks");
+    await mkdir(skillDirectory, { recursive: true });
+    await writeFile(join(skillDirectory, "SKILL.md"), "user-owned\n");
+    await assert.rejects(() => installAgentIntegration({ cwd }), /not managed by YourLandingSucks/);
+  } finally {
+    await rm(cwd, { recursive: true, force: true });
+  }
+});
+
+test("agent install refuses ambiguous AGENTS markers and preserves the file", async () => {
+  const cwd = await mkdtemp(join(tmpdir(), "yls-agent-markers-"));
+  const original = "# Project rules\n\n<!-- yourlandingsucks:begin -->\nDo not guess where this ends.\n";
+  try {
+    await writeFile(join(cwd, "AGENTS.md"), original);
+    const checked = await checkAgentIntegration({ cwd });
+    assert.equal(checked.status, "conflict");
+    assert.match(checked.problems.join(" "), /incomplete or duplicate/);
+    await assert.rejects(() => installAgentIntegration({ cwd }), /incomplete or duplicate/);
+    assert.equal(await readFile(join(cwd, "AGENTS.md"), "utf8"), original);
+    assert.equal(await readdir(cwd).then((entries) => entries.includes(".agents")), false);
   } finally {
     await rm(cwd, { recursive: true, force: true });
   }
@@ -181,7 +244,8 @@ test("README install is one human copy-paste prompt with no blanks to fill", asy
   assert.ok(install, "README must contain an Install section");
   for (const required of [
     "git+ssh://git@github.com/maxjustships/yourlandingsucks.git#main",
-    "node_modules/yourlandingsucks/skills/yourlandingsucks/SKILL.md",
+    "yls agent install --json",
+    ".agents/skills/yourlandingsucks/SKILL.md",
     "discover every public website it owns",
     "ask me only for decisions that cannot be safely inferred",
     "Do not activate any site until I confirm its proposal",
@@ -195,6 +259,7 @@ test("bundled Agent Skill owns onboarding, watch, and issue instructions", async
   const skillRoot = new URL("../../skills/yourlandingsucks/", import.meta.url);
   const contents = [
     await readFile(new URL("SKILL.md", skillRoot), "utf8"),
+    await readFile(new URL("references/intents-and-recommendations.md", skillRoot), "utf8"),
     await readFile(new URL("references/onboarding.md", skillRoot), "utf8"),
     await readFile(new URL("references/operations.md", skillRoot), "utf8"),
     await readFile(new URL("references/watch-and-feedback.md", skillRoot), "utf8"),
@@ -207,6 +272,8 @@ test("bundled Agent Skill owns onboarding, watch, and issue instructions", async
     "yls issue verify",
     "human confirms its proposal",
     "Never export, upload, commit, or push",
+    "contextual recommendation cards",
+    "Never ask the human to run a command",
   ]) {
     assert.match(contents, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   }

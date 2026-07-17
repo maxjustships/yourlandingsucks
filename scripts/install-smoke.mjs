@@ -48,7 +48,19 @@ try {
   assert.match(help.stdout, /yls issue sync/);
   assert.match(help.stdout, /yls site draft/);
   assert.match(help.stdout, /yls watch tick/);
+  assert.match(help.stdout, /yls agent install/);
   assert.match(help.stdout, /YLS never calls an LLM/);
+  const agentInstall = JSON.parse((await runNpm(["exec", "--", "yls", "agent", "install", "--json"], cwd)).stdout);
+  assert.equal(agentInstall.status, "installed");
+  assert.equal(agentInstall.integration.current, true);
+  const durableSkill = await readFile(join(cwd, ".agents", "skills", "yourlandingsucks", "SKILL.md"), "utf8");
+  const durableRecommendations = await readFile(join(cwd, ".agents", "skills", "yourlandingsucks", "references", "intents-and-recommendations.md"), "utf8");
+  const durableInstructions = await readFile(join(cwd, "AGENTS.md"), "utf8");
+  assert.match(durableSkill, /intents-and-recommendations\.md/i);
+  assert.match(durableRecommendations, /contextual recommendation cards/i);
+  assert.match(durableInstructions, /natural language into YLS primitives/i);
+  const agentCheck = JSON.parse((await runNpm(["exec", "--", "yls", "agent", "check", "--json"], cwd)).stdout);
+  assert.equal(agentCheck.current, true);
 
   const gitProject = join(cwd, "git-project");
   await mkdir(gitProject);
@@ -64,7 +76,10 @@ try {
   assert.match(gitHelp.stdout, /yls feedback aggregate/);
   assert.match(gitHelp.stdout, /yls site draft/);
   assert.match(gitHelp.stdout, /yls watch tick/);
-  process.stdout.write(`Installed ${installed.name}@${installed.version} with its Agent Skill from tarball and pinned git source; local yls binary passed.\n`);
+  const gitAgentInstall = JSON.parse((await runNpm(["exec", "--", "yls", "agent", "install", "--json"], gitProject)).stdout);
+  assert.equal(gitAgentInstall.integration.current, true);
+  assert.match(await readFile(join(gitProject, "AGENTS.md"), "utf8"), /\.agents\/skills\/yourlandingsucks\/SKILL\.md/);
+  process.stdout.write(`Installed ${installed.name}@${installed.version} with a durable Agent Skill from tarball and pinned git source; local yls binary passed.\n`);
 } finally {
   await rm(cwd, { recursive: true, force: true });
 }
