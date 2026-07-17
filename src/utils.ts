@@ -62,5 +62,5 @@ export function pathInside(base: string, candidate: string): boolean {
 }
 
 export function packageVersion(): string {
-  return "0.1.0";
+  return "0.1.0-alpha.0";
 }

@@ -70,9 +70,21 @@ contain product-sensitive context. Proposal/answer records and watch state stay
 under ignored `.yls/`; confirmed site configs and `yls.workspace.yaml` are
 intended to be reviewed and committed. A scheduled agent should receive only
 the repository permissions and external-action authority it actually needs.
+External scheduler provider names, automation IDs, registration timestamps, and
+heartbeats also remain in ignored local watch state. They are evidence supplied
+by the surrounding agent, not independent proof from the scheduler provider.
+
+## Supported versions
+
+This project is prerelease software. Security fixes are made against the latest
+published alpha only; see [SUPPORT.md](SUPPORT.md). Runtime dependencies are
+pinned exactly so browser and accessibility evidence cannot silently change
+between installs.
 
 ## Reporting vulnerabilities
 
-Until a dedicated private channel exists, do not open a public issue containing
-credentials or exploitable details. Contact the repository owner privately and
-include a minimal reproduction with secrets removed.
+Do not open a public issue containing credentials or exploitable details. Use
+[GitHub private vulnerability reporting](https://github.com/maxjustships/yourlandingsucks/security/advisories/new)
+and include a minimal reproduction with secrets removed. If that form is
+unavailable, do not disclose the report publicly; contact the repository owner
+through their GitHub profile and request a private channel.

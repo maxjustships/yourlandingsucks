@@ -1,4 +1,4 @@
 interface:
   display_name: "YourLandingSucks"
   short_description: "Prompt-native public-site improvement agent"
-  default_prompt: "Use $yourlandingsucks to inspect the public sites in this project and propose up to three contextual improvements."
+  default_prompt: "Use $yourlandingsucks to inspect my public pages and return prioritized, evidence-backed improvements."

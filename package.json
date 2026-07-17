@@ -1,6 +1,6 @@
 {
   "name": "yourlandingsucks",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "description": "Local-first, agent-driven evidence and verification for public website surfaces.",
   "repository": {
     "type": "git",
@@ -9,6 +9,10 @@
   "homepage": "https://github.com/maxjustships/yourlandingsucks#readme",
   "bugs": {
     "url": "https://github.com/maxjustships/yourlandingsucks/issues"
+  },
+  "author": "maxjustships",
+  "publishConfig": {
+    "access": "public"
   },
   "type": "module",
   "bin": {
@@ -21,6 +25,8 @@
     "README.md",
     "SECURITY.md",
     "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "SUPPORT.md",
     "LICENSE"
   ],
   "scripts": {
@@ -32,7 +38,9 @@
     "test:integration": "npm run build && node --test --test-concurrency=1 test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/multi-site-watch.test.mjs",
     "check": "npm run clean && npm run test",
     "smoke:install": "npm run build && node scripts/install-smoke.mjs",
-    "verify:v0": "npm run check"
+    "verify:v0": "npm run check",
+    "release:check": "npm run verify:v0 && npm run smoke:install && npm pack --dry-run",
+    "prepublishOnly": "npm run release:check"
   },
   "engines": {
     "node": ">=20"
@@ -47,9 +55,9 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "axe-core": "^4.10.3",
-    "playwright": "^1.54.1",
-    "yaml": "^2.8.0"
+    "axe-core": "4.12.1",
+    "playwright": "1.61.1",
+    "yaml": "2.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.14",

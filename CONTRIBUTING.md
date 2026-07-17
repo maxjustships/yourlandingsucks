@@ -4,7 +4,7 @@ A change is not complete because it looks plausible. Add automated evidence for
 the affected behavior and preserve the product boundaries below.
 
 ```bash
-npm install
+npm ci
 npm run verify:v0
 ```
 
@@ -37,3 +37,11 @@ malformed, or symlinked targets. Keep the human-facing contract prompt-native:
 the agent may use commands and artifacts internally, but must translate them
 into site outcomes and product decisions. Run the packaged install smoke and a
 fresh-session agent test when that discovery contract changes.
+
+Watch activation changes must cover unregistered, pending, healthy, stale,
+failed, schedule-changed, and removal states. Never infer an external scheduler
+exists from a confirmed cron alone.
+
+Before a release, run `npm run release:check`, the Agent Skill validator, a full
+history secret scan, and a blind fresh-session test. Release tags are immutable;
+do not point human installation at `main`.

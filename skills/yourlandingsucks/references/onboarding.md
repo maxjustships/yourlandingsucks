@@ -7,10 +7,10 @@ public site.
 
 Detect the repository's package manager and conventions. If YLS is not already
 installed, install the source specified by the user or bootstrap prompt as a
-development dependency. The default repository source is:
+development dependency. The default public prerelease is:
 
 ```text
-git+ssh://git@github.com/maxjustships/yourlandingsucks.git#main
+yourlandingsucks@0.1.0-alpha.0
 ```
 
 Confirm the local binary works:
@@ -113,6 +113,11 @@ npx --no-install yls site confirm --proposal STORED_PROPOSAL.json --answers HUMA
 npx --no-install yls doctor --site SITE_ID --json
 ```
 
+If the browser check returns `code: browser_unavailable`, translate its reason
+for the human and ask permission before downloading a local browser. Only after
+approval run the structured remediation command returned by `doctor`, then run
+`doctor` again. Do not improvise a global installation or hide the download.
+
 If `doctor` requires a config change, create a replacement proposal with
 `site propose --replace`, explain the exact change, and obtain fresh human
 confirmation. Never edit the config hash or workspace registry to bypass this
@@ -129,3 +134,10 @@ npx --no-install yls watch run --site SITE_ID --json
 Report baseline run IDs, evidence mode, issue counts, and any site failures.
 Then propose a scheduling mechanism appropriate to the repository or agent.
 Do not activate it until the human explicitly chooses it.
+
+## 7. Activate recurring monitoring only when requested
+
+Read [watch-and-feedback.md](watch-and-feedback.md) and follow its activation
+protocol. Site confirmation and a baseline are not scheduler activation. Never
+call monitoring active until an external automation was actually created,
+registered, executed once, and reported `healthy` by YLS.

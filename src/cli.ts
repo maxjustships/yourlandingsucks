@@ -7,8 +7,9 @@ import { runDoctor } from "./doctor.js";
 import { aggregateFeedback, exportFeedback, recordFeedback } from "./feedback.js";
 import { getIssue, loadIssueStore, nextIssue, syncIssues, updateIssue, verifyIssue } from "./issues.js";
 import { verifyPreview } from "./verify.js";
-import { runWatch } from "./watch.js";
+import { planWatch, registerWatch, runWatch, unregisterWatch, watchStatus } from "./watch.js";
 import { confirmSite, draftSite, listWorkspaceSites, loadWorkspaceSite, proposeSite } from "./workspace.js";
+import { packageVersion } from "./utils.js";
 
 interface ParsedArgs {
   positionals: string[];
@@ -70,6 +71,10 @@ Usage:
   yls run [--site <id> --workspace <file> | --config yls.yaml] [--json]
   yls watch tick [--site <id>] [--at <iso-time>] [--workspace <file>] [--json]
   yls watch run --site <id> [--at <iso-time>] [--workspace <file>] [--json]
+  yls watch plan [--site <id>] [--workspace <file>] [--json]
+  yls watch register --site <id> --provider <id> --external-id <id> --max-silence-minutes <n> [--workspace <file>] [--json]
+  yls watch status [--site <id>] [--at <iso-time>] [--workspace <file>] [--json]
+  yls watch unregister --site <id> [--workspace <file>] [--json]
   yls verify --against <run-id> --preview <origin> [--finding <id>] [--site <id>] [--json]
   yls issue sync --run <run-id> [--all] [--site <id>] [--json]
   yls issue list [--status <open|claimed|blocked|rejected|verified>] [--site <id>] [--json]
@@ -81,7 +86,7 @@ Usage:
   yls feedback export --run <run-id> --output <file> [--site <id>] [--json]
   yls feedback aggregate --input <export-file-or-directory> [--output <file>] [--json]
 
-YLS never calls an LLM. Any shell-capable coding agent can use these commands and read evidence.json/brief.md.`;
+YLS never calls an LLM. Agent-Skill/AGENTS.md-aware coding agents discover the durable capability; other shell-capable agents can use the same local primitives.`;
 }
 
 async function main(): Promise<void> {
@@ -90,6 +95,12 @@ async function main(): Promise<void> {
   const json = parsed.flags.json === true;
   const configFlag = stringFlag(parsed, "config") ?? "yls.yaml";
   const workspaceFlag = stringFlag(parsed, "workspace") ?? "yls.workspace.yaml";
+
+  if (command === "version" || parsed.flags.version === true) {
+    const version = packageVersion();
+    print(json ? { name: "yourlandingsucks", version } : version, json);
+    return;
+  }
 
   if (!command || command === "help" || parsed.flags.help === true) {
     print(help(), false);
@@ -180,10 +191,39 @@ async function main(): Promise<void> {
 
   if (command === "watch") {
     const subcommand = parsed.positionals[1];
+    const siteId = stringFlag(parsed, "site");
+    if (subcommand === "plan") {
+      print(await planWatch({ ...(siteId ? { siteId } : {}), workspacePath: workspaceFlag }), json);
+      return;
+    }
+    if (subcommand === "status") {
+      const result = await watchStatus({
+        ...(siteId ? { siteId } : {}),
+        ...(stringFlag(parsed, "at") ? { at: stringFlag(parsed, "at") } : {}),
+        workspacePath: workspaceFlag,
+      });
+      print(result, json);
+      if (result.status === "attention_required") process.exitCode = 1;
+      return;
+    }
+    if (subcommand === "register") {
+      print(await registerWatch({
+        siteId: stringFlag(parsed, "site", true)!,
+        provider: stringFlag(parsed, "provider", true)!,
+        externalId: stringFlag(parsed, "external-id", true)!,
+        maxSilenceMinutes: Number(stringFlag(parsed, "max-silence-minutes", true)),
+        workspacePath: workspaceFlag,
+      }), json);
+      return;
+    }
+    if (subcommand === "unregister") {
+      print(await unregisterWatch({ siteId: stringFlag(parsed, "site", true)!, workspacePath: workspaceFlag }), json);
+      return;
+    }
     if (subcommand !== "tick" && subcommand !== "run") throw new Error(`Unknown watch command: ${subcommand ?? "(missing)"}`);
     const result = await runWatch({
       mode: subcommand,
-      ...(stringFlag(parsed, "site") ? { siteId: stringFlag(parsed, "site") } : {}),
+      ...(siteId ? { siteId } : {}),
       ...(stringFlag(parsed, "at") ? { at: stringFlag(parsed, "at") } : {}),
       workspacePath: workspaceFlag,
     });

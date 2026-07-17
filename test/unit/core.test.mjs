@@ -7,6 +7,7 @@ import test from "node:test";
 import { parse } from "yaml";
 import {
   aggregateFeedback,
+  browserFailureCheck,
   canonicalizeUrl,
   checkAgentIntegration,
   classifyPath,
@@ -197,6 +198,16 @@ test("file analytics adapter reads only the explicitly configured snapshot", asy
   }
 });
 
+test("browser doctor failure gives the agent a confirmation-gated remediation", () => {
+  const check = browserFailureCheck(new Error("Executable does not exist"));
+  assert.equal(check.status, "fail");
+  assert.equal(check.code, "browser_unavailable");
+  assert.equal(check.remediation.requiresConfirmation, true);
+  assert.equal(check.remediation.command, "npx");
+  assert.deepEqual(check.remediation.args, ["--no-install", "playwright", "install", "chromium"]);
+  assert.match(check.remediation.reason, /browser evidence/i);
+});
+
 test("PostHog adapter uses bearer auth and parses aggregate query results", async () => {
   let observedAuth = "";
   let observedBody = "";
@@ -243,12 +254,13 @@ test("README install is one human copy-paste prompt with no blanks to fill", asy
   const install = readme.match(/## Install\n([\s\S]*?)(?=\n## )/)?.[1];
   assert.ok(install, "README must contain an Install section");
   for (const required of [
-    "git+ssh://git@github.com/maxjustships/yourlandingsucks.git#main",
+    "yourlandingsucks@0.1.0-alpha.0",
     "yls agent install --json",
     ".agents/skills/yourlandingsucks/SKILL.md",
     "discover every public website it owns",
     "ask me only for decisions that cannot be safely inferred",
     "Do not activate any site until I confirm its proposal",
+    "do not call monitoring active until its status is healthy",
   ]) {
     assert.match(install, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
@@ -269,6 +281,10 @@ test("bundled Agent Skill owns onboarding, watch, and issue instructions", async
     "yls site propose",
     "yls site confirm",
     "yls watch tick",
+    "yls watch plan",
+    "yls watch register",
+    "yls watch status",
+    "browser_unavailable",
     "yls issue verify",
     "human confirms its proposal",
     "Never export, upload, commit, or push",

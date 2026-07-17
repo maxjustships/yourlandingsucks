@@ -32,6 +32,9 @@ human explicitly asks for implementation details.
 - Never describe a heuristic or behavior signal as proven conversion lift.
 - Never export, upload, commit, or push feedback or raw `.yls/` artifacts unless
   the human explicitly requests the exact action and destination.
+- Never call recurring monitoring active merely because a site or cron was
+  confirmed. Require a real external automation registration and a healthy
+  heartbeat.
 
 ## Select the workflow
 
