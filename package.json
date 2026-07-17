@@ -38,6 +38,7 @@
     "test:integration": "npm run build && node --test --test-concurrency=1 test/integration/cli.test.mjs test/integration/discovery-matrix.test.mjs test/integration/multi-site-watch.test.mjs",
     "check": "npm run clean && npm run test",
     "smoke:install": "npm run build && node scripts/install-smoke.mjs",
+    "smoke:public-install": "node scripts/public-install-smoke.mjs",
     "verify:v0": "npm run check",
     "release:check": "npm run verify:v0 && npm run smoke:install && npm pack --dry-run",
     "prepublishOnly": "npm run release:check"

@@ -45,3 +45,6 @@ exists from a confirmed cron alone.
 Before a release, run `npm run release:check`, the Agent Skill validator, a full
 history secret scan, and a blind fresh-session test. Release tags are immutable;
 do not point human installation at `main`.
+
+After publishing to npm, run `npm run smoke:public-install` to verify the exact
+copy-paste installation path against the public registry.

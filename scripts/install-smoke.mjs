@@ -26,8 +26,9 @@ function run(command, args, cwd, options = {}) {
 }
 
 function runNpm(args, cwd) {
-  if (npmCli) return run(process.execPath, [npmCli, ...args], cwd);
-  return run("npm", args, cwd, { shell: process.platform === "win32" });
+  const options = { env: { ...process.env, npm_config_cache: join(cwd, ".npm-cache") } };
+  if (npmCli) return run(process.execPath, [npmCli, ...args], cwd, options);
+  return run("npm", args, cwd, { ...options, shell: process.platform === "win32" });
 }
 
 const cwd = await mkdtemp(join(tmpdir(), "yls-install-smoke-"));
