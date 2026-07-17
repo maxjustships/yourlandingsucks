@@ -2,6 +2,21 @@ import { getAnalyticsSnapshot } from "./analytics.js";
 import { launchBrowser } from "./browser.js";
 import type { DoctorCheck, DoctorResult, YlsConfig } from "./types.js";
 
+export function browserFailureCheck(error: unknown): DoctorCheck {
+  return {
+    name: "browser",
+    status: "fail",
+    code: "browser_unavailable",
+    message: error instanceof Error ? error.message : String(error),
+    remediation: {
+      requiresConfirmation: true,
+      command: "npx",
+      args: ["--no-install", "playwright", "install", "chromium"],
+      reason: "A compatible local Chrome or Playwright Chromium executable is required for browser evidence.",
+    },
+  };
+}
+
 async function connectivityCheck(config: YlsConfig): Promise<DoctorCheck> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), config.site.navigationTimeoutMs);
@@ -22,17 +37,21 @@ async function connectivityCheck(config: YlsConfig): Promise<DoctorCheck> {
   }
 }
 
-export async function runDoctor(config: YlsConfig, configDirectory: string): Promise<DoctorResult> {
+export async function runDoctor(
+  config: YlsConfig,
+  configDirectory: string,
+  dependencies: { launchBrowser?: typeof launchBrowser } = {},
+): Promise<DoctorResult> {
   const checks: DoctorCheck[] = [
     { name: "config", status: "pass", message: "Configuration schema is valid" },
     await connectivityCheck(config),
   ];
   try {
-    const browser = await launchBrowser(config.browser);
+    const browser = await (dependencies.launchBrowser ?? launchBrowser)(config.browser);
     await browser.close();
     checks.push({ name: "browser", status: "pass", message: "Playwright browser launched successfully" });
   } catch (error) {
-    checks.push({ name: "browser", status: "fail", message: error instanceof Error ? error.message : String(error) });
+    checks.push(browserFailureCheck(error));
   }
   try {
     const snapshot = await getAnalyticsSnapshot(config.analytics, config.site.url, configDirectory);

@@ -2,8 +2,19 @@ import { dirname, resolve } from "node:path";
 import { executeAuditRun, loadRun } from "./artifacts.js";
 import { cronMatches, scheduledMinuteKey } from "./cron.js";
 import { syncIssues } from "./issues.js";
-import type { PageEvidence, RunArtifact, WatchDelta, WatchPacket, WatchState, YlsConfig } from "./types.js";
-import { readJson, writeJsonAtomic } from "./utils.js";
+import type {
+  PageEvidence,
+  RunArtifact,
+  WatchDelta,
+  WatchPacket,
+  WatchPlanSite,
+  WatchRegistration,
+  WatchSiteState,
+  WatchState,
+  WatchStatusSite,
+  YlsConfig,
+} from "./types.js";
+import { readJson, stableHash, writeJsonAtomic } from "./utils.js";
 import { loadWorkspace, loadWorkspaceSite } from "./workspace.js";
 
 function now(): string {
@@ -28,6 +39,173 @@ async function loadWatchState(workspacePath: string): Promise<WatchState> {
 async function saveWatchState(workspacePath: string, state: WatchState): Promise<void> {
   state.updatedAt = now();
   await writeJsonAtomic(watchStatePath(workspacePath), state);
+}
+
+function scheduleFingerprint(schedule: { naturalLanguage: string; cron: string; timezone: string }): string {
+  return stableHash(JSON.stringify(schedule), 32);
+}
+
+function selectedWorkspaceSites<T extends { id: string }>(sites: T[], siteId?: string): T[] {
+  const selected = siteId ? sites.filter((site) => site.id === siteId) : sites;
+  if (siteId && selected.length === 0) throw new Error(`unknown or unconfirmed site: ${siteId}`);
+  return selected;
+}
+
+function validateRegistrationInput(provider: string, externalId: string, maxSilenceMinutes: number): void {
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(provider)) {
+    throw new Error("--provider must be a lowercase identifier using letters, numbers, underscores, or hyphens");
+  }
+  if (!externalId.trim() || externalId.length > 200 || /[\r\n\0]/.test(externalId)) {
+    throw new Error("--external-id must be a non-empty external automation identifier under 201 characters");
+  }
+  if (!Number.isInteger(maxSilenceMinutes) || maxSilenceMinutes < 1 || maxSilenceMinutes > 525_600) {
+    throw new Error("--max-silence-minutes must be an integer between 1 and 525600");
+  }
+}
+
+function healthForSite(state: WatchSiteState, registration: WatchRegistration | undefined, fingerprint: string, at: Date): {
+  health: WatchStatusSite["health"];
+  heartbeatAgeMinutes?: number;
+} {
+  if (!registration) return { health: "not_registered" };
+  if (registration.scheduleFingerprint !== fingerprint) return { health: "schedule_changed" };
+  const lastAttempt = state.lastAttemptAt ? new Date(state.lastAttemptAt).getTime() : Number.NEGATIVE_INFINITY;
+  const lastRun = state.lastRunAt ? new Date(state.lastRunAt).getTime() : Number.NEGATIVE_INFINITY;
+  if (state.lastStatus === "failed" && lastAttempt >= lastRun) return { health: "failed" };
+  if (!state.lastRunAt || lastRun < new Date(registration.registeredAt).getTime()) return { health: "pending_first_run" };
+  const heartbeatAgeMinutes = Math.max(0, Math.floor((at.getTime() - lastRun) / 60_000));
+  return {
+    health: heartbeatAgeMinutes > registration.maxSilenceMinutes ? "stale" : "healthy",
+    heartbeatAgeMinutes,
+  };
+}
+
+export async function planWatch(options: { siteId?: string; workspacePath?: string; cwd?: string } = {}): Promise<{
+  schemaVersion: 1;
+  status: "activation_required" | "registered";
+  generatedAt: string;
+  workspacePath: string;
+  sites: WatchPlanSite[];
+}> {
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const loaded = await loadWorkspace(options.workspacePath, cwd);
+  const state = await loadWatchState(loaded.path);
+  const sites: WatchPlanSite[] = [];
+  for (const site of selectedWorkspaceSites(loaded.workspace.sites, options.siteId)) {
+    const selected = await loadWorkspaceSite({ siteId: site.id, workspacePath: loaded.path, cwd });
+    const watch = selected.config.watch;
+    if (!watch?.enabled) continue;
+    const fingerprint = scheduleFingerprint(watch.schedule);
+    sites.push({
+      siteId: site.id,
+      origin: selected.config.site.url,
+      schedule: watch.schedule,
+      rules: watch.rules,
+      scheduleFingerprint: fingerprint,
+      registrationCurrent: state.sites[site.id]?.registration?.scheduleFingerprint === fingerprint,
+      invocation: {
+        command: "npx",
+        args: ["--no-install", "yls", "watch", "run", "--site", site.id, "--workspace", loaded.path, "--json"],
+        cwd: dirname(loaded.path),
+      },
+    });
+  }
+  if (sites.length === 0) throw new Error("no confirmed sites have watch enabled");
+  return {
+    schemaVersion: 1,
+    status: sites.every((site) => site.registrationCurrent) ? "registered" : "activation_required",
+    generatedAt: now(),
+    workspacePath: loaded.path,
+    sites,
+  };
+}
+
+export async function registerWatch(options: {
+  siteId: string;
+  provider: string;
+  externalId: string;
+  maxSilenceMinutes: number;
+  workspacePath?: string;
+  cwd?: string;
+}): Promise<{ status: "registered"; siteId: string; registration: WatchRegistration }> {
+  validateRegistrationInput(options.provider, options.externalId, options.maxSilenceMinutes);
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const loaded = await loadWorkspace(options.workspacePath, cwd);
+  const selected = await loadWorkspaceSite({ siteId: options.siteId, workspacePath: loaded.path, cwd });
+  const watch = selected.config.watch;
+  if (!watch?.enabled) throw new Error(`site ${options.siteId} does not have watch enabled`);
+  const registration: WatchRegistration = {
+    provider: options.provider,
+    externalId: options.externalId,
+    registeredAt: now(),
+    maxSilenceMinutes: options.maxSilenceMinutes,
+    scheduleFingerprint: scheduleFingerprint(watch.schedule),
+  };
+  const state = await loadWatchState(loaded.path);
+  state.sites[options.siteId] = { ...state.sites[options.siteId], registration };
+  await saveWatchState(loaded.path, state);
+  return { status: "registered", siteId: options.siteId, registration };
+}
+
+export async function unregisterWatch(options: { siteId: string; workspacePath?: string; cwd?: string }): Promise<{
+  status: "unregistered";
+  siteId: string;
+  removed: boolean;
+}> {
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const loaded = await loadWorkspace(options.workspacePath, cwd);
+  await loadWorkspaceSite({ siteId: options.siteId, workspacePath: loaded.path, cwd });
+  const state = await loadWatchState(loaded.path);
+  const removed = Boolean(state.sites[options.siteId]?.registration);
+  if (state.sites[options.siteId]) delete state.sites[options.siteId]!.registration;
+  await saveWatchState(loaded.path, state);
+  return { status: "unregistered", siteId: options.siteId, removed };
+}
+
+export async function watchStatus(options: { siteId?: string; workspacePath?: string; at?: string; cwd?: string } = {}): Promise<{
+  schemaVersion: 1;
+  status: "healthy" | "attention_required";
+  at: string;
+  workspacePath: string;
+  sites: WatchStatusSite[];
+}> {
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const at = options.at ? new Date(options.at) : new Date();
+  if (Number.isNaN(at.getTime())) throw new Error("--at must be a valid ISO timestamp");
+  const loaded = await loadWorkspace(options.workspacePath, cwd);
+  const state = await loadWatchState(loaded.path);
+  const sites: WatchStatusSite[] = [];
+  for (const site of selectedWorkspaceSites(loaded.workspace.sites, options.siteId)) {
+    const selected = await loadWorkspaceSite({ siteId: site.id, workspacePath: loaded.path, cwd });
+    const watch = selected.config.watch;
+    if (!watch) continue;
+    const siteState = state.sites[site.id] ?? {};
+    const fingerprint = scheduleFingerprint(watch.schedule);
+    const health = watch.enabled
+      ? healthForSite(siteState, siteState.registration, fingerprint, at)
+      : { health: "disabled" as const };
+    sites.push({
+      siteId: site.id,
+      origin: selected.config.site.url,
+      health: health.health,
+      schedule: watch.schedule,
+      scheduleFingerprint: fingerprint,
+      ...(siteState.registration ? { registration: siteState.registration } : {}),
+      ...(siteState.lastRunId ? { lastRunId: siteState.lastRunId } : {}),
+      ...(siteState.lastRunAt ? { lastRunAt: siteState.lastRunAt } : {}),
+      ...(siteState.lastAttemptAt ? { lastAttemptAt: siteState.lastAttemptAt } : {}),
+      ...(siteState.lastStatus ? { lastStatus: siteState.lastStatus } : {}),
+      ...(siteState.lastError ? { lastError: siteState.lastError } : {}),
+      ...(health.heartbeatAgeMinutes !== undefined ? { heartbeatAgeMinutes: health.heartbeatAgeMinutes } : {}),
+    });
+  }
+  return {
+    schemaVersion: 1,
+    status: sites.every((site) => site.health === "healthy" || site.health === "disabled") ? "healthy" : "attention_required",
+    at: at.toISOString(),
+    workspacePath: loaded.path,
+    sites,
+  };
 }
 
 function uniquePaths(run: RunArtifact): string[] {
@@ -164,10 +342,7 @@ export async function runWatch(options: {
   const at = options.at ? new Date(options.at) : new Date();
   if (Number.isNaN(at.getTime())) throw new Error("--at must be a valid ISO timestamp");
   const loadedWorkspace = await loadWorkspace(options.workspacePath, cwd);
-  const selectedSites = options.siteId
-    ? loadedWorkspace.workspace.sites.filter((site) => site.id === options.siteId)
-    : loadedWorkspace.workspace.sites;
-  if (options.siteId && selectedSites.length === 0) throw new Error(`unknown or unconfirmed site: ${options.siteId}`);
+  const selectedSites = selectedWorkspaceSites(loadedWorkspace.workspace.sites, options.siteId);
   if (options.mode === "run" && !options.siteId) throw new Error("watch run requires --site");
   const state = await loadWatchState(loadedWorkspace.path);
   const packets: WatchPacket[] = [];

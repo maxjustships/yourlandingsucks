@@ -164,12 +164,59 @@ export interface WatchSiteState {
   lastAttemptAt?: string;
   lastStatus?: "completed" | "failed";
   lastError?: string;
+  registration?: WatchRegistration;
+}
+
+export interface WatchRegistration {
+  provider: string;
+  externalId: string;
+  registeredAt: string;
+  maxSilenceMinutes: number;
+  scheduleFingerprint: string;
 }
 
 export interface WatchState {
   schemaVersion: 1;
   updatedAt: string;
   sites: Record<string, WatchSiteState>;
+}
+
+export type WatchHealth =
+  | "disabled"
+  | "not_registered"
+  | "pending_first_run"
+  | "healthy"
+  | "stale"
+  | "failed"
+  | "schedule_changed";
+
+export interface WatchPlanSite {
+  siteId: string;
+  origin: string;
+  schedule: WatchSchedule;
+  rules: WatchRule[];
+  scheduleFingerprint: string;
+  registrationCurrent: boolean;
+  invocation: {
+    command: string;
+    args: string[];
+    cwd: string;
+  };
+}
+
+export interface WatchStatusSite {
+  siteId: string;
+  origin: string;
+  health: WatchHealth;
+  schedule: WatchSchedule;
+  scheduleFingerprint: string;
+  registration?: WatchRegistration;
+  lastRunId?: string;
+  lastRunAt?: string;
+  lastAttemptAt?: string;
+  lastStatus?: "completed" | "failed";
+  lastError?: string;
+  heartbeatAgeMinutes?: number;
 }
 
 export interface WatchPageChange {
@@ -445,6 +492,13 @@ export interface DoctorCheck {
   name: string;
   status: "pass" | "warn" | "fail";
   message: string;
+  code?: string;
+  remediation?: {
+    requiresConfirmation: boolean;
+    command: string;
+    args: string[];
+    reason: string;
+  };
 }
 
 export interface DoctorResult {

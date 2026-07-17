@@ -19,7 +19,8 @@ language and compose the smallest safe workflow that satisfies it.
   conversion lift that was not measured.
 - **Watch, monitor, alert me:** translate the requested cadence and conditions
   into a site proposal. Ask for confirmation before activating or changing a
-  schedule or autonomy level.
+  schedule, external automation, or autonomy level. Follow the registration and
+  heartbeat protocol; never equate confirmed configuration with active watch.
 - **Learn from feedback:** use local outcomes automatically. Export or aggregate
   only when the human explicitly requests the action and destination.
 

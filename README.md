@@ -35,15 +35,42 @@ Open your coding agent in the project you want to monitor and paste this entire
 prompt:
 
 ```text
-Install YourLandingSucks in this repository from git+ssh://git@github.com/maxjustships/yourlandingsucks.git#main as a project-local development dependency. Run its project-local `yls agent install --json`, then read and follow `.agents/skills/yourlandingsucks/SKILL.md`. Inspect this repository and its deployment configuration to discover every public website it owns. Inspect each public site read-only and infer a separate safe scope, purpose, critical journeys, exclusions, monitoring schedule, and autonomy policy. Present one onboarding proposal grouped by site, clearly mark assumptions, and ask me only for decisions that cannot be safely inferred. Do not activate any site until I confirm its proposal. Do not submit forms, deploy, push, export data, or make product changes during onboarding. Keep YLS commands, configuration, artifacts, and state internal; after onboarding I will manage it only with natural-language requests through my agent.
+Install the exact public prerelease `yourlandingsucks@0.1.0-alpha.0` in this repository as a project-local development dependency. Run its project-local `yls agent install --json`, then read and follow `.agents/skills/yourlandingsucks/SKILL.md`. Inspect this repository and its deployment configuration to discover every public website it owns. Inspect each public site read-only and infer a separate safe scope, purpose, critical journeys, exclusions, monitoring schedule, and autonomy policy. Present one onboarding proposal grouped by site, clearly mark assumptions, and ask me only for decisions that cannot be safely inferred. Do not activate any site until I confirm its proposal. If recurring monitoring is requested after confirmation, prepare the external automation plan, ask before creating or changing that automation, register only an external automation that was actually created, run one safe heartbeat, and do not call monitoring active until its status is healthy. If the browser check fails, explain the required local browser download and ask before applying its remediation. Do not submit forms, deploy, push, export data, or make product changes during onboarding. Keep YLS commands, configuration, artifacts, and state internal; after onboarding I will manage it only with natural-language requests through my agent.
 ```
 
 There is nothing to configure before pasting it. The agent installs the local
-tool and a durable project capability, proposes the sites and their rules, asks
-the smallest useful set of questions, and waits for confirmation before
-monitoring becomes active. Fresh agent sessions can then discover YLS from the
-project and respond to ordinary requests such as “check my public pages,”
+tool and a durable project capability, proposes the sites and their rules, and
+asks the smallest useful set of questions. Site confirmation does not pretend
+to create a scheduler. When recurring monitoring is requested, the agent must
+create an external automation with separate permission, register its real ID,
+run a heartbeat, and verify that YLS reports it healthy. Fresh compatible agent
+sessions can then respond to ordinary requests such as “check my public pages,”
 “suggest three improvements,” or “watch this every weekday.”
+
+## What it feels like
+
+This is the result of a blind fresh-session test against a deliberately broken
+four-page fixture. The agent received only:
+
+> Check this project's public pages, suggest up to three concrete improvements,
+> and do not fix anything.
+
+It audited desktop and mobile pages, changed no source files, and returned three
+prioritized recommendations: add accessible names to the hero image and pricing
+form, remove an unexpected background form submission, and repair a broken
+global-navigation route. Each recommendation included observed evidence, why it
+blocked the page goal, a source-aware change, authority, and verification
+conditions. It did not expose commands, YAML, or internal artifacts.
+
+## Agent compatibility
+
+- **Codex and Agent-Skill/`AGENTS.md`-aware agents:** durable discovery is
+  forward-tested.
+- **Other agents that honor `AGENTS.md`:** expected to discover the same local
+  capability; report incompatibilities as bugs.
+- **Other shell-capable coding agents:** the copy-paste onboarding works for the
+  current session, but durable rediscovery is not claimed until that agent's
+  instruction surface is tested.
 
 ## Current V0
 
@@ -58,7 +85,8 @@ project and respond to ordinary requests such as “check my public pages,”
 - turns findings into a bounded local issue queue and verifies fixes against a
   preview before closing them;
 - watches confirmed sites on cron schedules and reports route, title, heading,
-  status, and finding changes;
+  status, and finding changes when an external scheduler invokes the registered
+  watch plan;
 - accepts optional aggregate analytics from a local snapshot or PostHog;
 - keeps telemetry off and exports sanitized feedback only after an explicit
   request.
@@ -89,8 +117,22 @@ project + public sites
 ```
 
 Recurring monitoring uses the same loop. YLS decides what is due and records
-the evidence; the coding agent interprets natural-language rules and stays
-inside the autonomy level confirmed for each site.
+the evidence; an external agent automation or scheduler invokes the plan. YLS
+tracks its registration and heartbeat, while the coding agent interprets
+natural-language rules and stays inside the autonomy level confirmed for each
+site.
+
+## V0 limitations
+
+- This is a local CLI and Agent Skill, not a hosted SaaS or background daemon.
+- YLS does not create a scheduler by itself; the agent composes that workflow
+  from the host's automation primitive after explicit permission.
+- Only Codex-style Agent Skill/`AGENTS.md` persistence is forward-tested today.
+- Heuristic recommendations and behavioral signals are hypotheses, not proven
+  conversion lift.
+- Production deployment, form submission, paid resources, and feedback export
+  always require separate authority.
+- The prerelease artifact and CLI schemas may change before `1.0.0`.
 
 ## Trust boundary
 

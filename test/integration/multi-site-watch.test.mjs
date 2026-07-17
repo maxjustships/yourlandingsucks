@@ -128,6 +128,14 @@ test("multi-site onboarding gates activation and watch runner isolates rules, sc
     assert.deepEqual(listed.sites.map((site) => site.id), ["alpha", "beta"]);
     assert.notEqual(listed.sites[0].schedule, listed.sites[1].schedule);
 
+    const watchPlan = await runCli(cwd, ["watch", "plan"]);
+    assert.equal(watchPlan.status, "activation_required");
+    assert.deepEqual(watchPlan.sites.map((site) => site.siteId), ["alpha", "beta"]);
+    assert.deepEqual(watchPlan.sites[0].invocation.args.slice(0, 4), ["--no-install", "yls", "watch", "run"]);
+    assert.equal(watchPlan.sites[0].registrationCurrent, false);
+    const unregisteredStatus = await runCli(cwd, ["watch", "status"], 1);
+    assert.deepEqual(unregisteredStatus.sites.map((site) => site.health), ["not_registered", "not_registered"]);
+
     const alphaBaseline = await runCli(cwd, ["watch", "run", "--site", "alpha", "--at", "2026-07-17T10:10:00.000Z"]);
     assert.equal(alphaBaseline.packets[0].delta.baseline, true);
     assert.equal(alphaBaseline.packets[0].rules[0].id, "alpha-policy");
@@ -178,6 +186,56 @@ test("multi-site onboarding gates activation and watch runner isolates rules, sc
     const recovered = await runCli(cwd, ["watch", "tick", "--at", "2026-07-17T10:20:00.000Z"]);
     assert.equal(recovered.status, "completed");
     assert.deepEqual(recovered.packets.map((packet) => packet.siteId), ["alpha", "beta"]);
+
+    const badRegistration = await runCli(cwd, [
+      "watch", "register", "--site", "alpha", "--provider", "Bad Provider", "--external-id", "automation-1",
+      "--max-silence-minutes", "2",
+    ], 1);
+    assert.match(badRegistration.message, /--provider/);
+    const registration = await runCli(cwd, [
+      "watch", "register", "--site", "alpha", "--provider", "test-agent", "--external-id", "automation-1",
+      "--max-silence-minutes", "2",
+    ]);
+    assert.equal(registration.status, "registered");
+    const registeredAt = new Date(registration.registration.registeredAt);
+    const watchStatePath = join(cwd, ".yls", "watch-state.json");
+    const failedState = JSON.parse(await readFile(watchStatePath, "utf8"));
+    failedState.sites.alpha.lastAttemptAt = new Date(registeredAt.getTime() + 10_000).toISOString();
+    failedState.sites.alpha.lastStatus = "failed";
+    failedState.sites.alpha.lastError = "seeded scheduler failure";
+    await writeFile(watchStatePath, JSON.stringify(failedState, null, 2));
+    const failedHealth = await runCli(cwd, ["watch", "status", "--site", "alpha"], 1);
+    assert.equal(failedHealth.sites[0].health, "failed");
+    delete failedState.sites.alpha.lastAttemptAt;
+    delete failedState.sites.alpha.lastStatus;
+    delete failedState.sites.alpha.lastError;
+    await writeFile(watchStatePath, JSON.stringify(failedState, null, 2));
+    const beforeHeartbeat = new Date(registeredAt.getTime() + 30_000).toISOString();
+    const pending = await runCli(cwd, ["watch", "status", "--site", "alpha", "--at", beforeHeartbeat], 1);
+    assert.equal(pending.sites[0].health, "pending_first_run");
+
+    const heartbeatAt = new Date(registeredAt.getTime() + 60_000).toISOString();
+    await runCli(cwd, ["watch", "run", "--site", "alpha", "--at", heartbeatAt]);
+    const healthyAt = new Date(registeredAt.getTime() + 120_000).toISOString();
+    const healthy = await runCli(cwd, ["watch", "status", "--site", "alpha", "--at", healthyAt]);
+    assert.equal(healthy.sites[0].health, "healthy");
+    assert.equal(healthy.sites[0].heartbeatAgeMinutes, 1);
+    const staleAt = new Date(registeredAt.getTime() + 240_000).toISOString();
+    const stale = await runCli(cwd, ["watch", "status", "--site", "alpha", "--at", staleAt], 1);
+    assert.equal(stale.sites[0].health, "stale");
+
+    alphaConfig.watch.schedule = { naturalLanguage: "every two minutes", cron: "*/2 * * * *", timezone: "UTC" };
+    await writeFile(join(cwd, alphaConfigPath), stringify(alphaConfig));
+    const alphaReplacement = await propose(cwd, "alpha", alphaConfigPath, true);
+    const alphaReplacementAnswers = await answers(cwd, alphaReplacement, "alpha-replacement");
+    await runCli(cwd, [
+      "site", "confirm", "--proposal", alphaReplacement.proposalPath, "--answers", alphaReplacementAnswers,
+    ]);
+    const changedSchedule = await runCli(cwd, ["watch", "status", "--site", "alpha"], 1);
+    assert.equal(changedSchedule.sites[0].health, "schedule_changed");
+    assert.equal((await runCli(cwd, ["watch", "unregister", "--site", "alpha"])).removed, true);
+    const afterUnregister = await runCli(cwd, ["watch", "status", "--site", "alpha"], 1);
+    assert.equal(afterUnregister.sites[0].health, "not_registered");
 
     assert.ok(await readFile(join(cwd, ".yls", "sites", "alpha", "issues.json"), "utf8"));
     assert.ok(await readFile(join(cwd, ".yls", "sites", "beta", "issues.json"), "utf8"));
