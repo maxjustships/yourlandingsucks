@@ -56,8 +56,8 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "axe-core": "4.12.1",
-    "playwright": "1.61.1",
+    "axe-core": "4.13.0",
+    "playwright": "1.62.1",
     "yaml": "2.9.0"
   },
   "devDependencies": {
